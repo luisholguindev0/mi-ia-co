@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@theme {
+  --font-clash: var(--font-clash), "Space Grotesk", sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+
+  --color-background: #030014;
+  --color-foreground: #ffffff;
+  --color-primary: #a855f7;
+  --color-neon-blue: #00f3ff;
+  --color-neon-purple: #bd00ff;
+
+  --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+:root {
+  --background: #030014;
+  --foreground: #ffffff;
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-clash);
+  overflow-x: hidden;
+}
+
+/* Utilities for "Visual Orgasm" */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.text-gradient {
+  background: linear-gradient(to right, #fff, #a855f7);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Premium "Living" Gold Gradient */
+.text-gold-shine {
+  background: linear-gradient(110deg,
+      #cf9728 10%,
+      /* Rich Gold */
+      #f2cd60 30%,
+      /* Lighter Gold */
+      #fffdc4 45%,
+      /* Bright Specular Highlight (The "Silver Light") */
+      #fffdc4 55%,
+      #f2cd60 70%,
+      #cf9728 90%);
+
+  /* Make the gradient large enough to animate the shiny part across */
+  background-size: 200% auto;
+
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+
+  /* Smooth, continuous flow */
+  animation: shine 3s linear infinite;
+
+  /* Subtle glow to enhance the "expensive" feel */
+  filter: drop-shadow(0 0 10px rgba(246, 190, 66, 0.4));
+}
+
+@keyframes shine {
+  to {
+    background-position: -200% center;
+  }
+}
+
+.animate-shine {
+  animation: shine 3s linear infinite;
+}
