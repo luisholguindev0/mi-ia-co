@@ -1,10 +1,11 @@
 import { login, signup } from './actions'
 
-export default function LoginPage({
+export default async function LoginPage({
     searchParams,
 }: {
-    searchParams: { error?: string, message?: string }
+    searchParams: Promise<{ error?: string, message?: string }>
 }) {
+    const params = await searchParams;
     return (
         <div className="flex min-h-screen items-center justify-center bg-zinc-950 p-4">
             <div className="w-full max-w-sm space-y-8 rounded-lg border border-zinc-800 bg-zinc-900/50 p-8 backdrop-blur-xl">
@@ -56,9 +57,9 @@ export default function LoginPage({
                         </div>
                     </div>
 
-                    {searchParams?.error && (
+                    {params?.error && (
                         <div className="text-red-400 text-xs text-center border border-red-900/50 bg-red-900/20 p-2 rounded">
-                            {searchParams.error}
+                            {params.error}
                         </div>
                     )}
 
