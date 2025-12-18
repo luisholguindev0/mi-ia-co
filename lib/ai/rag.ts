@@ -10,9 +10,10 @@
  */
 
 import { supabaseAdmin } from '@/lib/db';
+import { BUSINESS_CONFIG } from '@/lib/config';
 
 const EMBEDDING_MODEL = 'text-embedding-3-small';
-const SIMILARITY_THRESHOLD = 0.6; // Lowered from 0.75 for better context retrieval on generic queries
+const SIMILARITY_THRESHOLD = BUSINESS_CONFIG.ai.ragSimilarityThreshold;
 const MAX_RESULTS = 5;
 
 interface KnowledgeChunk {

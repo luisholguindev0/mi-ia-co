@@ -1,19 +1,16 @@
 /**
  * lib/booking.ts
  * Pure booking logic for appointment management
- * Business hours: Mon-Fri, 9 AM - 5 PM Colombia Time (UTC-5)
+ * Business hours are configurable via environment variables
  */
 
 import { supabaseAdmin } from '@/lib/db';
+import { BUSINESS_CONFIG } from '@/lib/config';
 
-const BUSINESS_HOURS = {
-    start: 9, // 9 AM
-    end: 17,  // 5 PM
-    slotDuration: 60, // minutes
-    timezone: 'America/Bogota',
-};
-
-const WORKING_DAYS = [1, 2, 3, 4, 5]; // Monday = 1, Friday = 5
+// Use centralized config for business hours
+const BUSINESS_HOURS = BUSINESS_CONFIG.hours;
+const WORKING_DAYS = BUSINESS_CONFIG.workingDays;
+const SLOT_DURATION = BUSINESS_CONFIG.slotDuration;
 
 interface TimeSlot {
     date: string;

@@ -19,9 +19,16 @@ import { supabaseAdmin } from "@/lib/db";
 import { routeToAgent } from "@/lib/ai/agents";
 import { sendWhatsAppMessage } from "@/lib/whatsapp/api";
 import { executeToolCalls } from "@/lib/ai/executor";
+import {
+    BUSINESS_CONFIG,
+    sanitizeInput,
+    isRateLimited,
+    containsPII,
+    redactPII
+} from "@/lib/config";
 
-// Configuration
-const MAX_HISTORY_MESSAGES = 20; // Last N messages to include in context
+// Configuration from centralized config
+const MAX_HISTORY_MESSAGES = BUSINESS_CONFIG.ai.maxHistoryMessages;
 
 /**
  * Format messages array into a conversation string for the AI
@@ -57,12 +64,32 @@ export const processWhatsAppMessage = inngest.createFunction(
         console.log(`⏱️ Processing Start: ${t0} | MsgID: ${messageId}`);
 
         try {
-            const { from, text, name } = event.data;
+            const { from, name } = event.data;
             const phoneNumber = from;
 
             // ═══════════════════════════════════════════════════════════════
-            // STEP 1: Get or Create Lead
+            // GUARD: Rate limiting
             // ═══════════════════════════════════════════════════════════════
+            if (isRateLimited(phoneNumber)) {
+                console.log(`🚫 Rate limited: ${phoneNumber}`);
+                return { success: false, rateLimited: true, phoneNumber };
+            }
+
+            // ═══════════════════════════════════════════════════════════════
+            // SANITIZE: Clean and validate input
+            // ═══════════════════════════════════════════════════════════════
+            const rawText = event.data.text;
+            const text = sanitizeInput(rawText);
+
+            // Log PII warning (for audit, not blocking)
+            if (containsPII(text)) {
+                console.warn(`⚠️ PII detected in message from ${phoneNumber}`);
+                // Log redacted version for debugging
+                console.log(`📝 Redacted: ${redactPII(text)}`);
+            }
+
+            // ═══════════════════════════════════════════════════════════════
+            // STEP 1: Get or Create Lead
             const t1Start = Date.now();
             console.log(`⏱️ Step 1 Start (Get/Create Lead): Phone=${phoneNumber}`);
 
