@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { Send, Bot, User, ShieldAlert, Power } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Send, Bot, User, ShieldAlert, Power, MessageSquareDashed } from 'lucide-react'
 import { sendManualMessage, toggleAiStatus } from '@/lib/actions/chat'
+import { createClient } from '@/utils/supabase/client'
 import { cn } from '@/lib/utils'
 
 type Message = {
@@ -21,13 +22,60 @@ export function ChatInterceptor({
     initialMessages: Message[],
     aiPaused: boolean
 }) {
+    const [messages, setMessages] = useState<Message[]>(initialMessages)
     const [input, setInput] = useState('')
     const [isSending, setIsSending] = useState(false)
     const [paused, setPaused] = useState(aiPaused)
+    const messagesEndRef = useRef<HTMLDivElement>(null)
+    const supabase = createClient()
+
+    // Auto-scroll to bottom when new messages arrive
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, [messages])
+
+    // Subscribe to real-time message updates
+    useEffect(() => {
+        const channel = supabase
+            .channel(`chat-${leadId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages',
+                    filter: `lead_id=eq.${leadId}`,
+                },
+                (payload) => {
+                    console.log('🔔 New message received:', payload.new)
+                    const newMsg = payload.new as Message
+                    setMessages((prev) => {
+                        // Avoid duplicates
+                        if (prev.find(m => m.id === newMsg.id)) return prev
+                        return [...prev, newMsg]
+                    })
+                }
+            )
+            .subscribe()
+
+        return () => {
+            supabase.removeChannel(channel)
+        }
+    }, [leadId, supabase])
 
     const handleSend = async () => {
         if (!input.trim()) return
         setIsSending(true)
+
+        // Optimistic update
+        const optimisticMsg: Message = {
+            id: `temp-${Date.now()}`,
+            role: 'human_agent',
+            content: input,
+            created_at: new Date().toISOString()
+        }
+        setMessages(prev => [...prev, optimisticMsg])
+
         await sendManualMessage(leadId, input)
         setInput('')
         setIsSending(false)
@@ -45,6 +93,10 @@ export function ChatInterceptor({
             <div className="flex items-center justify-between p-4 border-b border-zinc-800 bg-zinc-900/80">
                 <div className="flex items-center gap-2">
                     <h3 className="text-sm font-semibold text-white">Live Interceptor</h3>
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
                     {paused ? (
                         <span className="text-[10px] uppercase bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded-full font-medium">
                             AI Paused
@@ -72,14 +124,14 @@ export function ChatInterceptor({
 
             {/* Chat Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-zinc-950/30">
-                {initialMessages.length === 0 && (
+                {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full text-zinc-500 text-xs">
                         <MessageSquareDashed className="w-8 h-8 mb-2 opacity-20" />
                         <p>No messages yet</p>
                     </div>
                 )}
 
-                {initialMessages.map((msg) => (
+                {messages.map((msg) => (
                     <div
                         key={msg.id}
                         className={cn(
@@ -109,6 +161,7 @@ export function ChatInterceptor({
                         </div>
                     </div>
                 ))}
+                <div ref={messagesEndRef} />
             </div>
 
             {/* Input Area */}
@@ -132,11 +185,10 @@ export function ChatInterceptor({
                 </div>
                 <p className="mt-2 text-[10px] text-zinc-500 flex items-center gap-1">
                     <ShieldAlert className="w-3 h-3" />
-                    Sending a message manually will log as 'human_agent'.
+                    Messages update in real-time. Manual replies log as 'human_agent'.
                 </p>
             </div>
         </div>
     )
 }
 
-import { MessageSquareDashed } from 'lucide-react'

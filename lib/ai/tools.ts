@@ -34,12 +34,19 @@ export const handoffToHumanSchema = z.object({
 export type HandoffToHumanInput = z.infer<typeof handoffToHumanSchema>;
 
 // Tool: Update lead profile (progressive profiling)
+// This is called by the AI to extract and save lead information during conversation
 export const updateLeadProfileSchema = z.object({
-    name: z.string().optional(),
-    company: z.string().optional(),
-    role: z.string().optional(),
-    painPoints: z.array(z.string()).optional(),
-    leadScore: z.number().min(0).max(100).optional(),
+    name: z.string().optional().describe('Lead\'s name'),
+    company: z.string().optional().describe('Business/company name'),
+    role: z.string().optional().describe('Their role: dueño, gerente, empleado, etc.'),
+    industry: z.enum([
+        'retail', 'technology', 'health', 'law', 'food',
+        'services', 'manufacturing', 'real_estate', 'education', 'other'
+    ]).optional().describe('Business industry category'),
+    location: z.string().optional().describe('City or region in Colombia'),
+    painPoints: z.array(z.string()).optional().describe('Specific problems they describe'),
+    contactReason: z.string().optional().describe('Why they reached out'),
+    leadScore: z.number().min(0).max(100).optional().describe('Quality score based on signals'),
 });
 
 export type UpdateLeadProfileInput = z.infer<typeof updateLeadProfileSchema>;

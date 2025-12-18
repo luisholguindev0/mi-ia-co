@@ -2,6 +2,8 @@
  * lib/ai/agents.ts
  * AI Agent Definitions: DoctorAgent (R1) & CloserAgent (V3)
  * Uses Vercel AI SDK with DeepSeek models
+ * 
+ * v2: Now with conversation history injection for multi-turn context
  */
 
 import { generateText, generateObject } from 'ai';
@@ -29,13 +31,14 @@ interface AgentContext {
     leadId: string;
     phoneNumber: string;
     userMessage: string;
-    conversationHistory?: string;
+    conversationHistory: string; // NEW: Full conversation history string
     currentState: string;
 }
 
 /**
  * DoctorAgent: Uses DeepSeek-R1 for complex diagnosis with RAG
  * Implements the full RAG pipeline from EDD Section 2.1
+ * Now with conversation history for multi-turn context
  */
 export async function runDoctorAgent(ctx: AgentContext): Promise<AgentResponse> {
     const startTime = Date.now();
@@ -47,9 +50,10 @@ export async function runDoctorAgent(ctx: AgentContext): Promise<AgentResponse> 
         const ragContext = await retrieveContext(ctx.userMessage);
         console.log(`⏱️ RAG Retrieval Duration: ${Date.now() - tRag}ms`);
 
-        // Step 2: Build prompt with retrieved context
+        // Step 2: Build prompt with retrieved context AND conversation history
         const systemPrompt = DOCTOR_SYSTEM_PROMPT
             .replace('{{RETRIEVED_CONTEXT}}', ragContext)
+            .replace('{{CONVERSATION_HISTORY}}', ctx.conversationHistory)
             .replace('{{USER_MESSAGE}}', ctx.userMessage);
 
         // Step 3: Generate structured response using R1
@@ -67,9 +71,14 @@ export async function runDoctorAgent(ctx: AgentContext): Promise<AgentResponse> 
         await logAgentDecision({
             leadId: ctx.leadId,
             eventType: 'ai_thought',
-            model: 'deepseek-r1',
+            model: 'deepseek-v3',
             latencyMs: Date.now() - startTime,
-            payload: { input: ctx.userMessage, output: response, ragContext },
+            payload: {
+                input: ctx.userMessage,
+                output: response,
+                ragContext,
+                historyLength: ctx.conversationHistory.length
+            },
         });
 
         // Step 5: Apply guardrails
@@ -89,6 +98,7 @@ export async function runDoctorAgent(ctx: AgentContext): Promise<AgentResponse> 
 /**
  * CloserAgent: Uses DeepSeek-V3 for fast conversational booking
  * Optimized for <200ms latency
+ * Now with conversation history for multi-turn context
  */
 export async function runCloserAgent(ctx: AgentContext): Promise<AgentResponse> {
     const startTime = Date.now();
@@ -96,6 +106,7 @@ export async function runCloserAgent(ctx: AgentContext): Promise<AgentResponse> 
     try {
         const systemPrompt = CLOSER_SYSTEM_PROMPT
             .replace('{{CURRENT_DATETIME}}', new Date().toISOString())
+            .replace('{{CONVERSATION_HISTORY}}', ctx.conversationHistory)
             .replace('{{USER_MESSAGE}}', ctx.userMessage);
 
         const { object: response } = await generateObject({
@@ -111,7 +122,11 @@ export async function runCloserAgent(ctx: AgentContext): Promise<AgentResponse> 
             eventType: 'ai_thought',
             model: 'deepseek-v3',
             latencyMs: Date.now() - startTime,
-            payload: { input: ctx.userMessage, output: response },
+            payload: {
+                input: ctx.userMessage,
+                output: response,
+                historyLength: ctx.conversationHistory.length
+            },
         });
 
         return applyGuardrails(response);

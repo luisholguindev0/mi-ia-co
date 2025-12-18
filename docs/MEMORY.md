@@ -1,3 +1,85 @@
+# MEMORY.md - Wrap Up: Week 4 Complete (AI Brain Enhancement)
+
+**Date**: 2025-12-18 10:56 EST
+**Status**: ✅ Week 4 COMPLETE
+
+## Accomplished
+
+### 1. Conversation Memory System - CRITICAL FIX
+- **Problem**: AI was looping, repeating greetings. `messages` table was empty.
+- **Root Cause**: `inngest/functions.ts` wasn't saving messages or fetching history.
+- **Solution**:
+  - Added Step 2: Save user message to `messages` table
+  - Added Step 3: Fetch last 20 messages as history
+  - Added Step 5: Save AI response to `messages` table
+  - Updated `lib/ai/agents.ts` to inject `conversationHistory` into prompts
+  - Updated `lib/ai/prompts.ts` with `<conversation_history>` XML tags
+- **Per-Lead Concurrency**: Added `concurrency: [{ limit: 1, key: "event.data.from" }]` to prevent race conditions
+
+### 2. Progressive Profiling (Auto-Extract Lead Data)
+- **Problem**: `leads.profile` was always empty despite conversations.
+- **Solution**:
+  - Updated `DOCTOR_SYSTEM_PROMPT` with `<progressive_profiling>` instructions
+  - Expanded `updateLeadProfileSchema` with: `industry`, `location`, `contactReason`
+  - AI now calls `updateLeadProfile` tool whenever it learns something new
+
+### 3. Tool Execution Engine
+- **Problem**: `toolCalls` were logged but never executed.
+- **Solution**:
+  - Created `lib/ai/executor.ts` handling: `updateLeadProfile`, `checkAvailability`, `bookSlot`, `handoffToHuman`
+  - Wired into `inngest/functions.ts` Step 7
+
+### 4. Manual WhatsApp Send (God Mode)
+- **Problem**: Manual messages from dashboard were only saved to DB, not sent.
+- **Solution**: Updated `lib/actions/chat.ts` to actually call `sendWhatsAppMessage`
+
+### 5. Marketing Analytics Dashboard
+- **New Route**: `/admin/analytics`
+- **Features**:
+  - KPI cards: Total Leads, Qualified, Conversion Rate, Appointments
+  - Pie chart: Pipeline status distribution
+  - Bar chart: Industry breakdown
+  - Pain points frequency table
+- **Implementation**: `app/admin/analytics/page.tsx` + `AnalyticsCharts.tsx` (Recharts)
+
+### 6. CSV Export
+- **New Route**: `/api/export/leads`
+- **Output**: Full lead export with profile data, pain points, industry, contact reason
+
+### 7. Real-time Chat Sync
+- **Problem**: Chat view required page refresh to see new messages.
+- **Solution**: Added Supabase Realtime subscription to `ChatInterceptor.tsx`
+
+### 8. RAG Expansion
+- **Before**: 8 generic entries
+- **After**: 32 high-conversion entries
+- **Categories**: retail, technology, website, objection handlers, automation, success stories
+- **Script**: `scripts/generate-embeddings.ts` for populating embeddings
+
+## Files Changed/Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `inngest/functions.ts` | Modified | Memory + per-lead concurrency |
+| `lib/ai/agents.ts` | Modified | History injection |
+| `lib/ai/prompts.ts` | Modified | Progressive profiling instructions |
+| `lib/ai/tools.ts` | Modified | Expanded schema |
+| `lib/ai/rag.ts` | Modified | Threshold 0.75→0.6 |
+| `lib/ai/executor.ts` | **NEW** | Tool execution engine |
+| `lib/actions/chat.ts` | Modified | WhatsApp send |
+| `components/admin/ChatInterceptor.tsx` | Modified | Realtime + optimistic UI |
+| `app/admin/analytics/page.tsx` | **NEW** | Analytics dashboard |
+| `app/admin/analytics/AnalyticsCharts.tsx` | **NEW** | Recharts visualizations |
+| `app/api/export/leads/route.ts` | **NEW** | CSV export |
+| `scripts/generate-embeddings.ts` | **NEW** | RAG population utility |
+
+## Next Steps
+1. **Deploy**: `git push` triggers Vercel deployment
+2. **Test**: Send 5 WhatsApp messages to verify memory, profiling, and tools
+3. **Monitor**: Watch `/admin/dashboard` realtime feed
+
+---
+
 # MEMORY.md - Wrap Up: Week 3 Complete (Hardening)
 
 **Date**: 2025-12-18 08:30 EST

@@ -2,28 +2,71 @@
  * inngest/functions.ts
  * The "Cortex" of the application.
  * Processes incoming WhatsApp events asynchronously.
+ * 
+ * ARCHITECTURE (v2 - With Memory):
+ * 1. Get/Create Lead
+ * 2. Save incoming user message to `messages` table
+ * 3. Fetch conversation history (last 20 messages)
+ * 4. Format history and pass to AI agent
+ * 5. Generate AI response with full context
+ * 6. Save AI response to `messages` table
+ * 7. Send to WhatsApp
+ * 8. Handle tool calls / state transitions
  */
 
 import { inngest } from "./client";
 import { supabaseAdmin } from "@/lib/db";
 import { routeToAgent } from "@/lib/ai/agents";
 import { sendWhatsAppMessage } from "@/lib/whatsapp/api";
+import { executeToolCalls } from "@/lib/ai/executor";
+
+// Configuration
+const MAX_HISTORY_MESSAGES = 20; // Last N messages to include in context
+
+/**
+ * Format messages array into a conversation string for the AI
+ */
+function formatConversationHistory(messages: Array<{ role: string; content: string }>): string {
+    if (!messages || messages.length === 0) {
+        return "No hay historial de conversación previo.";
+    }
+
+    return messages
+        .map((msg) => {
+            const roleLabel = msg.role === "user" ? "Usuario" :
+                msg.role === "assistant" ? "Asistente (Tú)" :
+                    msg.role === "human_agent" ? "Agente Humano" : "Sistema";
+            return `${roleLabel}: ${msg.content}`;
+        })
+        .join("\n\n");
+}
 
 export const processWhatsAppMessage = inngest.createFunction(
-    { id: "process-whatsapp-message", concurrency: 4 }, // Rate limit processing (Free Tier Max is 5)
+    {
+        id: "process-whatsapp-message",
+        // PER-LEAD CONCURRENCY: Only 1 message per phone number at a time
+        // This prevents race conditions and ensures message ordering
+        concurrency: [
+            { limit: 1, key: "event.data.from" }
+        ]
+    },
     { event: "whatsapp/message.received" },
     async ({ event, step }) => {
         const t0 = Date.now();
-        console.log(`⏱️ Processing Start: ${t0}`);
+        const messageId = event.data.messageId; // Use WhatsApp message ID for idempotency
+        console.log(`⏱️ Processing Start: ${t0} | MsgID: ${messageId}`);
 
         try {
-            const { from, text, name, timestamp } = event.data;
+            const { from, text, name } = event.data;
             const phoneNumber = from;
 
-            // Step 1: Get or Create Lead
+            // ═══════════════════════════════════════════════════════════════
+            // STEP 1: Get or Create Lead
+            // ═══════════════════════════════════════════════════════════════
             const t1Start = Date.now();
-            console.log(`⏱️ Step 1 Start (Get/Create Lead): ${t1Start} - Phone: ${phoneNumber}`);
-            const lead = await step.run("get-or-create-lead", async () => {
+            console.log(`⏱️ Step 1 Start (Get/Create Lead): Phone=${phoneNumber}`);
+
+            const lead = await step.run(`get-lead-${messageId}`, async () => {
                 const { data: existingLead } = await supabaseAdmin
                     .from("leads")
                     .select("*")
@@ -31,6 +74,7 @@ export const processWhatsAppMessage = inngest.createFunction(
                     .single();
 
                 if (existingLead) {
+                    // Update last_active timestamp
                     await supabaseAdmin
                         .from("leads")
                         .update({ last_active: new Date().toISOString() })
@@ -38,11 +82,12 @@ export const processWhatsAppMessage = inngest.createFunction(
                     return existingLead;
                 }
 
+                // Create new lead
                 const { data: newLead, error } = await supabaseAdmin
                     .from("leads")
                     .insert({
                         phone_number: phoneNumber,
-                        profile: { name: name },
+                        profile: { name: name || null },
                         status: "new",
                     })
                     .select()
@@ -51,55 +96,153 @@ export const processWhatsAppMessage = inngest.createFunction(
                 if (error) throw new Error(`Failed to create lead: ${error.message}`);
                 return newLead;
             });
-            console.log(`⏱️ Step 1 End. Duration: ${Date.now() - t1Start}ms`);
+            console.log(`⏱️ Step 1 End. Duration: ${Date.now() - t1Start}ms | LeadID: ${lead.id}`);
 
-            // Step 2: AI Processing (The "Brain")
+            // Check if AI is paused for this lead (God Mode active)
+            if (lead.ai_paused) {
+                console.log(`⚠️ AI paused for lead ${lead.id}. Saving message but not responding.`);
+                // Still save the message even if AI is paused
+                await step.run(`save-user-msg-paused-${messageId}`, async () => {
+                    await supabaseAdmin.from("messages").insert({
+                        lead_id: lead.id,
+                        role: "user",
+                        content: text,
+                    });
+                });
+                return { success: true, aiPaused: true, leadId: lead.id };
+            }
+
+            // ═══════════════════════════════════════════════════════════════
+            // STEP 2: Save User Message to Database
+            // ═══════════════════════════════════════════════════════════════
             const t2Start = Date.now();
-            console.log(`⏱️ Step 2 Start (AI Gen): ${t2Start}`);
-            const aiResponse = await step.run("generate-ai-response", async () => {
+            console.log(`⏱️ Step 2 Start (Save User Message)`);
+
+            await step.run(`save-user-msg-${messageId}`, async () => {
+                const { error } = await supabaseAdmin.from("messages").insert({
+                    lead_id: lead.id,
+                    role: "user",
+                    content: text,
+                });
+                if (error) {
+                    console.error("Failed to save user message:", error);
+                    // Don't throw - we can still try to respond
+                }
+            });
+            console.log(`⏱️ Step 2 End. Duration: ${Date.now() - t2Start}ms`);
+
+            // ═══════════════════════════════════════════════════════════════
+            // STEP 3: Fetch Conversation History
+            // ═══════════════════════════════════════════════════════════════
+            const t3Start = Date.now();
+            console.log(`⏱️ Step 3 Start (Fetch History)`);
+
+            const conversationHistory = await step.run(`fetch-history-${messageId}`, async () => {
+                const { data: messages, error } = await supabaseAdmin
+                    .from("messages")
+                    .select("role, content, created_at")
+                    .eq("lead_id", lead.id)
+                    .order("created_at", { ascending: true })
+                    .limit(MAX_HISTORY_MESSAGES);
+
+                if (error) {
+                    console.error("Failed to fetch history:", error);
+                    return [];
+                }
+                return messages || [];
+            });
+
+            const historyString = formatConversationHistory(conversationHistory);
+            console.log(`⏱️ Step 3 End. Duration: ${Date.now() - t3Start}ms | Messages: ${conversationHistory.length}`);
+
+            // ═══════════════════════════════════════════════════════════════
+            // STEP 4: AI Processing (The "Brain" with Memory)
+            // ═══════════════════════════════════════════════════════════════
+            const t4Start = Date.now();
+            console.log(`⏱️ Step 4 Start (AI Generation)`);
+
+            const aiResponse = await step.run(`ai-generate-${messageId}`, async () => {
                 const innerT = Date.now();
                 try {
                     const response = await routeToAgent({
                         leadId: lead.id,
                         phoneNumber: lead.phone_number,
                         userMessage: text,
+                        conversationHistory: historyString, // NEW: Inject history
                         currentState: lead.status || "new",
                     });
-                    console.log(`⏱️ Inner AI Gen Duration: ${Date.now() - innerT}ms`);
+                    console.log(`⏱️ Inner AI Duration: ${Date.now() - innerT}ms | Confidence: ${response.confidence}`);
                     return response;
                 } catch (err: any) {
-                    console.error(`❌ AI Gen Failed after ${Date.now() - innerT}ms:`, err);
+                    console.error(`❌ AI Error after ${Date.now() - innerT}ms:`, err);
                     throw err;
                 }
             });
-            console.log(`⏱️ Step 2 End. Duration: ${Date.now() - t2Start}ms`);
+            console.log(`⏱️ Step 4 End. Duration: ${Date.now() - t4Start}ms`);
 
-            // Step 3: Send Response to WhatsApp
-            const t3Start = Date.now();
-            console.log(`⏱️ Step 3 Start (WhatsApp Send): ${t3Start}`);
-            await step.run("send-whatsapp-reply", async () => {
-                console.log(`Sending response to ${phoneNumber}: ${aiResponse.message}`);
-                try {
-                    await sendWhatsAppMessage(phoneNumber, aiResponse.message);
-                } catch (e: any) {
-                    console.error(`WhatsApp Send Failed: ${e.message}`);
-                    throw e;
+            // ═══════════════════════════════════════════════════════════════
+            // STEP 5: Save AI Response to Database
+            // ═══════════════════════════════════════════════════════════════
+            const t5Start = Date.now();
+            console.log(`⏱️ Step 5 Start (Save AI Response)`);
+
+            await step.run(`save-ai-msg-${messageId}`, async () => {
+                const { error } = await supabaseAdmin.from("messages").insert({
+                    lead_id: lead.id,
+                    role: "assistant",
+                    content: aiResponse.message,
+                });
+                if (error) {
+                    console.error("Failed to save AI message:", error);
                 }
             });
-            console.log(`⏱️ Step 3 End. Duration: ${Date.now() - t3Start}ms`);
+            console.log(`⏱️ Step 5 End. Duration: ${Date.now() - t5Start}ms`);
 
-            // Step 4: Handle Tool Calls
+            // ═══════════════════════════════════════════════════════════════
+            // STEP 6: Send Response to WhatsApp
+            // ═══════════════════════════════════════════════════════════════
+            const t6Start = Date.now();
+            console.log(`⏱️ Step 6 Start (WhatsApp Send)`);
+
+            await step.run(`whatsapp-send-${messageId}`, async () => {
+                console.log(`📤 Sending to ${phoneNumber}: "${aiResponse.message.substring(0, 100)}..."`);
+                await sendWhatsAppMessage(phoneNumber, aiResponse.message);
+            });
+            console.log(`⏱️ Step 6 End. Duration: ${Date.now() - t6Start}ms`);
+
+            // ═══════════════════════════════════════════════════════════════
+            // STEP 7: Handle Tool Calls (if any)
+            // ═══════════════════════════════════════════════════════════════
             if (aiResponse.toolCalls && aiResponse.toolCalls.length > 0) {
-                const t4Start = Date.now();
-                await step.run("handle-tool-calls", async () => {
-                    console.log("Tool calls executed:", aiResponse.toolCalls);
+                const t7Start = Date.now();
+                console.log(`⏱️ Step 7 Start (Tool Calls): ${aiResponse.toolCalls.length} calls`);
+
+                await step.run(`tools-${messageId}`, async () => {
+                    // Execute all tool calls (profile updates, booking, handoff)
+                    const results = await executeToolCalls(aiResponse.toolCalls!, lead.id, lead);
+
+                    console.log("📋 Tool execution results:", JSON.stringify(results));
+
+                    // Log to audit for observability
+                    await supabaseAdmin.from("audit_logs").insert({
+                        lead_id: lead.id,
+                        event_type: "tool_execution",
+                        payload: {
+                            toolCalls: aiResponse.toolCalls,
+                            results: results,
+                        },
+                        latency_ms: Date.now() - t7Start,
+                    });
                 });
-                console.log(`⏱️ Step 4 (Tools) Duration: ${Date.now() - t4Start}ms`);
+                console.log(`⏱️ Step 7 End. Duration: ${Date.now() - t7Start}ms`);
             }
 
-            // Step 5: Update Lead Status
+            // ═══════════════════════════════════════════════════════════════
+            // STEP 8: Update Lead Status (if changed)
+            // ═══════════════════════════════════════════════════════════════
             if (aiResponse.nextState && aiResponse.nextState !== lead.status) {
-                await step.run("update-lead-status", async () => {
+                await step.run(`update-status-${messageId}`, async () => {
+                    console.log(`📊 Status transition: ${lead.status} → ${aiResponse.nextState}`);
                     await supabaseAdmin
                         .from("leads")
                         .update({ status: aiResponse.nextState })
@@ -107,11 +250,34 @@ export const processWhatsAppMessage = inngest.createFunction(
                 });
             }
 
-            console.log(`⏱️ TOTAL PROCESS DURATION: ${Date.now() - t0}ms`);
-            return { success: true, leadId: lead.id };
+            const totalDuration = Date.now() - t0;
+            console.log(`✅ COMPLETE: ${totalDuration}ms | Lead: ${lead.id} | History: ${conversationHistory.length} msgs`);
+
+            return {
+                success: true,
+                leadId: lead.id,
+                durationMs: totalDuration,
+                historySize: conversationHistory.length,
+            };
+
         } catch (error: any) {
-            console.error("FATAL INNGEST ERROR:", error);
-            // Optional: Log to audit_logs
+            console.error("❌ FATAL ERROR:", error);
+
+            // Log error to audit_logs for debugging
+            try {
+                await supabaseAdmin.from("audit_logs").insert({
+                    event_type: "inngest_error",
+                    payload: {
+                        error: error.message,
+                        stack: error.stack,
+                        event: event.data
+                    },
+                    latency_ms: Date.now() - t0,
+                });
+            } catch (logError) {
+                console.error("Failed to log error:", logError);
+            }
+
             return { error: error.message };
         }
     }

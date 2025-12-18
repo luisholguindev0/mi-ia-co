@@ -12,7 +12,7 @@
 import { supabaseAdmin } from '@/lib/db';
 
 const EMBEDDING_MODEL = 'text-embedding-3-small';
-const SIMILARITY_THRESHOLD = 0.75;
+const SIMILARITY_THRESHOLD = 0.6; // Lowered from 0.75 for better context retrieval on generic queries
 const MAX_RESULTS = 5;
 
 interface KnowledgeChunk {
