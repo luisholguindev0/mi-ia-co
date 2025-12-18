@@ -3,6 +3,7 @@
  * Orchestrates persona conversations with the AI
  */
 
+import 'dotenv/config';
 import { supabaseAdmin } from '@/lib/db';
 import type { Persona } from './personas';
 import { sendWhatsAppMessage, sleep } from './webhook-simulator';

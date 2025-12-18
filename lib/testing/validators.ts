@@ -3,6 +3,7 @@
  * Validation logic for E2E tests
  */
 
+import 'dotenv/config';
 import { supabaseAdmin } from '@/lib/db';
 
 export interface ValidationResult {
