@@ -1,0 +1,301 @@
+{
+  "timestamp": "2025-12-18T20:42:34.020Z",
+  "summary": {
+    "total": 10,
+    "passed": 0,
+    "failed": 10,
+    "totalDuration": 11368
+  },
+  "results": [
+    {
+      "personaId": "happy-path-harry",
+      "personaName": "Harry Gómez",
+      "success": false,
+      "turnCount": 1,
+      "duration": 1599,
+      "expectedOutcome": "books",
+      "conversationLog": [
+        {
+          "role": "user",
+          "content": "Hola, necesito una página web para mi tienda de ropa"
+        }
+      ],
+      "validations": {
+        "leadCreated": {
+          "passed": false,
+          "message": "Not validated due to error"
+        },
+        "messagesSaved": {
+          "passed": false,
+          "message": "Not validated due to error"
+        },
+        "profileUpdated": {
+          "passed": false,
+          "message": "Not validated due to error"
+        }
+      },
+      "error": "Failed to send initial message: HTTP 401: Unauthorized"
+    },
+    {
+      "personaId": "price-conscious-paula",
+      "personaName": "Paula Rodríguez",
+      "success": false,
+      "turnCount": 1,
+      "duration": 1522,
+      "expectedOutcome": "books",
+      "conversationLog": [
+        {
+          "role": "user",
+          "content": "Hola, cuánto cuesta una página web?"
+        }
+      ],
+      "validations": {
+        "leadCreated": {
+          "passed": false,
+          "message": "Not validated due to error"
+        },
+        "messagesSaved": {
+          "passed": false,
+          "message": "Not validated due to error"
+        },
+        "profileUpdated": {
+          "passed": false,
+          "message": "Not validated due to error"
+        }
+      },
+      "error": "Failed to send initial message: HTTP 401: Unauthorized"
+    },
+    {
+      "personaId": "skeptical-steve",
+      "personaName": "Esteban López",
+      "success": false,
+      "turnCount": 1,
+      "duration": 1728,
+      "expectedOutcome": "books",
+      "conversationLog": [
+        {
+          "role": "user",
+          "content": "He tenido malas experiencias con agencias. Por qué ustedes son diferentes?"
+        }
+      ],
+      "validations": {
+        "leadCreated": {
+          "passed": false,
+          "message": "Not validated due to error"
+        },
+        "messagesSaved": {
+          "passed": false,
+          "message": "Not validated due to error"
+        },
+        "profileUpdated": {
+          "passed": false,
+          "message": "Not validated due to error"
+        }
+      },
+      "error": "Failed to send initial message: HTTP 401: Unauthorized"
+    },
+    {
+      "personaId": "abandoner-ana",
+      "personaName": "Ana Martínez",
+      "success": false,
+      "turnCount": 1,
+      "duration": 730,
+      "expectedOutcome": "abandons",
+      "conversationLog": [
+        {
+          "role": "user",
+          "content": "Necesito una web YA. Cuánto cuesta y en cuánto tiempo la tienen lista?"
+        }
+      ],
+      "validations": {
+        "leadCreated": {
+          "passed": false,
+          "message": "Not validated due to error"
+        },
+        "messagesSaved": {
+          "passed": false,
+          "message": "Not validated due to error"
+        },
+        "profileUpdated": {
+          "passed": false,
+          "message": "Not validated due to error"
+        }
+      },
+      "error": "Failed to send initial message: HTTP 401: Unauthorized"
+    },
+    {
+      "personaId": "vague-victor",
+      "personaName": "Víctor Sánchez",
+      "success": false,
+      "turnCount": 1,
+      "duration": 1110,
+      "expectedOutcome": "books",
+      "conversationLog": [
+        {
+          "role": "user",
+          "content": "Hola, tengo una idea de negocio pero no sé muy bien qué necesito"
+        }
+      ],
+      "validations": {
+        "leadCreated": {
+          "passed": false,
+          "message": "Not validated due to error"
+        },
+        "messagesSaved": {
+          "passed": false,
+          "message": "Not validated due to error"
+        },
+        "profileUpdated": {
+          "passed": false,
+          "message": "Not validated due to error"
+        }
+      },
+      "error": "Failed to send initial message: HTTP 401: Unauthorized"
+    },
+    {
+      "personaId": "urgent-ursula",
+      "personaName": "Úrsula Pérez",
+      "success": false,
+      "turnCount": 1,
+      "duration": 927,
+      "expectedOutcome": "books",
+      "conversationLog": [
+        {
+          "role": "user",
+          "content": "Necesito un catálogo digital para ayer. Tengo un cliente grande esperando."
+        }
+      ],
+      "validations": {
+        "leadCreated": {
+          "passed": false,
+          "message": "Not validated due to error"
+        },
+        "messagesSaved": {
+          "passed": false,
+          "message": "Not validated due to error"
+        },
+        "profileUpdated": {
+          "passed": false,
+          "message": "Not validated due to error"
+        }
+      },
+      "error": "Failed to send initial message: HTTP 401: Unauthorized"
+    },
+    {
+      "personaId": "researcher-rachel",
+      "personaName": "Raquel Torres",
+      "success": false,
+      "turnCount": 1,
+      "duration": 1144,
+      "expectedOutcome": "researching",
+      "conversationLog": [
+        {
+          "role": "user",
+          "content": "Hola, estoy investigando opciones de desarrollo web para recomendar a mis clientes"
+        }
+      ],
+      "validations": {
+        "leadCreated": {
+          "passed": false,
+          "message": "Not validated due to error"
+        },
+        "messagesSaved": {
+          "passed": false,
+          "message": "Not validated due to error"
+        },
+        "profileUpdated": {
+          "passed": false,
+          "message": "Not validated due to error"
+        }
+      },
+      "error": "Failed to send initial message: HTTP 401: Unauthorized"
+    },
+    {
+      "personaId": "referral-roberto",
+      "personaName": "Roberto Castro",
+      "success": false,
+      "turnCount": 1,
+      "duration": 733,
+      "expectedOutcome": "books",
+      "conversationLog": [
+        {
+          "role": "user",
+          "content": "Hola, me recomendó Carlos Jiménez. Necesito una tienda online."
+        }
+      ],
+      "validations": {
+        "leadCreated": {
+          "passed": false,
+          "message": "Not validated due to error"
+        },
+        "messagesSaved": {
+          "passed": false,
+          "message": "Not validated due to error"
+        },
+        "profileUpdated": {
+          "passed": false,
+          "message": "Not validated due to error"
+        }
+      },
+      "error": "Failed to send initial message: HTTP 401: Unauthorized"
+    },
+    {
+      "personaId": "multi-location-miguel",
+      "personaName": "Miguel Ángel Vargas",
+      "success": false,
+      "turnCount": 1,
+      "duration": 1153,
+      "expectedOutcome": "books",
+      "conversationLog": [
+        {
+          "role": "user",
+          "content": "Tengo 5 locaciones de mi franquicia. Necesito un sistema que las unifique."
+        }
+      ],
+      "validations": {
+        "leadCreated": {
+          "passed": false,
+          "message": "Not validated due to error"
+        },
+        "messagesSaved": {
+          "passed": false,
+          "message": "Not validated due to error"
+        },
+        "profileUpdated": {
+          "passed": false,
+          "message": "Not validated due to error"
+        }
+      },
+      "error": "Failed to send initial message: HTTP 401: Unauthorized"
+    },
+    {
+      "personaId": "international-irene",
+      "personaName": "Irene Morales",
+      "success": false,
+      "turnCount": 1,
+      "duration": 722,
+      "expectedOutcome": "books",
+      "conversationLog": [
+        {
+          "role": "user",
+          "content": "Hola, estoy en Miami pero quiero vender productos en Colombia. Pueden ayudarme?"
+        }
+      ],
+      "validations": {
+        "leadCreated": {
+          "passed": false,
+          "message": "Not validated due to error"
+        },
+        "messagesSaved": {
+          "passed": false,
+          "message": "Not validated due to error"
+        },
+        "profileUpdated": {
+          "passed": false,
+          "message": "Not validated due to error"
+        }
+      },
+      "error": "Failed to send initial message: HTTP 401: Unauthorized"
+    }
+  ]
+}
