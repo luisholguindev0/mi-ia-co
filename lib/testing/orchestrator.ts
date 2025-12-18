@@ -59,16 +59,16 @@ export async function runPersonaConversation(
             throw new Error(`Failed to send initial message: ${sendResult.error}`);
         }
 
-        // Wait for webhook processing
-        await sleep(3000);
+        // Wait for webhook processing (Inngest takes ~5-10s)
+        await sleep(8000);
 
         // Step 2: Conversation loop
         for (let turn = 0; turn < maxTurns; turn++) {
-            // Get AI's response from database
-            const aiResponse = await getLatestAIResponse(persona.phoneNumber);
+            // Get AI's response from database (with retry)
+            const aiResponse = await getLatestAIResponseWithRetry(persona.phoneNumber, 3);
 
             if (!aiResponse) {
-                console.log(`   ⚠️ No AI response after turn ${turn + 1}`);
+                console.log(`   ⚠️ No AI response after turn ${turn + 1} (tried 3 times)`);
                 break;
             }
 
@@ -104,8 +104,8 @@ export async function runPersonaConversation(
                 break;
             }
 
-            // Wait for processing
-            await sleep(4000);
+            // Wait for processing (increased from 4s to 8s)
+            await sleep(8000);
         }
 
         // Step 3: Validate results
@@ -164,6 +164,29 @@ async function getLatestAIResponse(phoneNumber: string): Promise<string | null> 
         .limit(1);
 
     return messages?.[0]?.content || null;
+}
+
+/**
+ * Get latest AI response with retry logic
+ */
+async function getLatestAIResponseWithRetry(
+    phoneNumber: string,
+    maxRetries: number = 3
+): Promise<string | null> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        const response = await getLatestAIResponse(phoneNumber);
+
+        if (response) {
+            return response;
+        }
+
+        if (attempt < maxRetries) {
+            console.log(`   ⏳ Retry ${attempt}/${maxRetries} - waiting 3s for AI response...`);
+            await sleep(3000);
+        }
+    }
+
+    return null;
 }
 
 /**

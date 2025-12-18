@@ -1,10 +1,10 @@
 {
-  "timestamp": "2025-12-18T20:42:34.020Z",
+  "timestamp": "2025-12-18T20:45:54.350Z",
   "summary": {
     "total": 10,
     "passed": 0,
     "failed": 10,
-    "totalDuration": 11368
+    "totalDuration": 41005
   },
   "results": [
     {
@@ -12,7 +12,7 @@
       "personaName": "Harry Gómez",
       "success": false,
       "turnCount": 1,
-      "duration": 1599,
+      "duration": 4056,
       "expectedOutcome": "books",
       "conversationLog": [
         {
@@ -34,14 +34,14 @@
           "message": "Not validated due to error"
         }
       },
-      "error": "Failed to send initial message: HTTP 401: Unauthorized"
+      "error": "Cannot read properties of null (reading 'from')"
     },
     {
       "personaId": "price-conscious-paula",
       "personaName": "Paula Rodríguez",
       "success": false,
       "turnCount": 1,
-      "duration": 1522,
+      "duration": 4437,
       "expectedOutcome": "books",
       "conversationLog": [
         {
@@ -63,14 +63,14 @@
           "message": "Not validated due to error"
         }
       },
-      "error": "Failed to send initial message: HTTP 401: Unauthorized"
+      "error": "Cannot read properties of null (reading 'from')"
     },
     {
       "personaId": "skeptical-steve",
       "personaName": "Esteban López",
       "success": false,
       "turnCount": 1,
-      "duration": 1728,
+      "duration": 4646,
       "expectedOutcome": "books",
       "conversationLog": [
         {
@@ -92,14 +92,14 @@
           "message": "Not validated due to error"
         }
       },
-      "error": "Failed to send initial message: HTTP 401: Unauthorized"
+      "error": "Cannot read properties of null (reading 'from')"
     },
     {
       "personaId": "abandoner-ana",
       "personaName": "Ana Martínez",
       "success": false,
       "turnCount": 1,
-      "duration": 730,
+      "duration": 4416,
       "expectedOutcome": "abandons",
       "conversationLog": [
         {
@@ -121,14 +121,14 @@
           "message": "Not validated due to error"
         }
       },
-      "error": "Failed to send initial message: HTTP 401: Unauthorized"
+      "error": "Cannot read properties of null (reading 'from')"
     },
     {
       "personaId": "vague-victor",
       "personaName": "Víctor Sánchez",
       "success": false,
       "turnCount": 1,
-      "duration": 1110,
+      "duration": 4441,
       "expectedOutcome": "books",
       "conversationLog": [
         {
@@ -150,14 +150,14 @@
           "message": "Not validated due to error"
         }
       },
-      "error": "Failed to send initial message: HTTP 401: Unauthorized"
+      "error": "Cannot read properties of null (reading 'from')"
     },
     {
       "personaId": "urgent-ursula",
       "personaName": "Úrsula Pérez",
       "success": false,
       "turnCount": 1,
-      "duration": 927,
+      "duration": 4441,
       "expectedOutcome": "books",
       "conversationLog": [
         {
@@ -179,14 +179,14 @@
           "message": "Not validated due to error"
         }
       },
-      "error": "Failed to send initial message: HTTP 401: Unauthorized"
+      "error": "Cannot read properties of null (reading 'from')"
     },
     {
       "personaId": "researcher-rachel",
       "personaName": "Raquel Torres",
       "success": false,
       "turnCount": 1,
-      "duration": 1144,
+      "duration": 3563,
       "expectedOutcome": "researching",
       "conversationLog": [
         {
@@ -208,14 +208,14 @@
           "message": "Not validated due to error"
         }
       },
-      "error": "Failed to send initial message: HTTP 401: Unauthorized"
+      "error": "Cannot read properties of null (reading 'from')"
     },
     {
       "personaId": "referral-roberto",
       "personaName": "Roberto Castro",
       "success": false,
       "turnCount": 1,
-      "duration": 733,
+      "duration": 3635,
       "expectedOutcome": "books",
       "conversationLog": [
         {
@@ -237,14 +237,14 @@
           "message": "Not validated due to error"
         }
       },
-      "error": "Failed to send initial message: HTTP 401: Unauthorized"
+      "error": "Cannot read properties of null (reading 'from')"
     },
     {
       "personaId": "multi-location-miguel",
       "personaName": "Miguel Ángel Vargas",
       "success": false,
       "turnCount": 1,
-      "duration": 1153,
+      "duration": 3636,
       "expectedOutcome": "books",
       "conversationLog": [
         {
@@ -266,14 +266,14 @@
           "message": "Not validated due to error"
         }
       },
-      "error": "Failed to send initial message: HTTP 401: Unauthorized"
+      "error": "Cannot read properties of null (reading 'from')"
     },
     {
       "personaId": "international-irene",
       "personaName": "Irene Morales",
       "success": false,
       "turnCount": 1,
-      "duration": 722,
+      "duration": 3734,
       "expectedOutcome": "books",
       "conversationLog": [
         {
@@ -295,7 +295,7 @@
           "message": "Not validated due to error"
         }
       },
-      "error": "Failed to send initial message: HTTP 401: Unauthorized"
+      "error": "Cannot read properties of null (reading 'from')"
     }
   ]
 }
