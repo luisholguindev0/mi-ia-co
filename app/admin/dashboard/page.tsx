@@ -33,11 +33,6 @@ export default async function DashboardPage() {
                         <h1 className="text-3xl font-bold tracking-tight text-white mb-1">Mission Control</h1>
                         <p className="text-zinc-400 text-sm">Welcome back, {user.email}</p>
                     </div>
-                    <div className="flex gap-4">
-                        <form action="/auth/signout" method="post">
-                            <button className="text-sm text-zinc-500 hover:text-white transition-colors">Sign Out</button>
-                        </form>
-                    </div>
                 </div>
 
                 {/* KPI Cards */}
