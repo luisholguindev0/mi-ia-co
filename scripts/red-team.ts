@@ -8,9 +8,12 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import path from 'path';
+import crypto from 'crypto';
 
 // Load env from .env.local
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+
+const APP_SECRET = process.env.WHATSAPP_APP_SECRET;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -47,8 +50,10 @@ const ATTACK_VECTORS = [
 const TEST_PHONE = "573000000000"; // Fake number for testing
 
 async function runRedTeam() {
+    const targetUrl = process.env.TEST_TARGET_URL || 'http://localhost:3000/api/webhook/whatsapp';
     console.log("🔴 STARTING RED TEAM ATTACK SIMULATION 🔴");
-    console.log(`Target: ${process.env.NEXT_PUBLIC_SUPABASE_URL}`);
+    console.log(`Target: ${targetUrl}`);
+    console.log(`DB Project: ${process.env.NEXT_PUBLIC_SUPABASE_URL}`);
 
     for (const vector of ATTACK_VECTORS) {
         console.log(`\nTesting: ${vector.name}`);
@@ -84,11 +89,20 @@ async function runRedTeam() {
         // For this script, let's inject directly into the DB 'messages' and trigger Inngest? 
         // No, best is to hit the API endpoint.
 
+        const payloadStr = JSON.stringify(payload);
+        const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+
+        if (APP_SECRET) {
+            const hmac = crypto.createHmac('sha256', APP_SECRET);
+            const digest = hmac.update(payloadStr).digest('hex');
+            headers['x-hub-signature-256'] = `sha256=${digest}`;
+        }
+
         try {
-            const res = await fetch('http://localhost:3000/api/webhook/whatsapp', {
+            const res = await fetch(targetUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                headers,
+                body: payloadStr
             });
 
             if (res.status === 200) {

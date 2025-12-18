@@ -1,15 +1,11 @@
-/**
- * scripts/load-test.ts
- * Simulates high concurrency to test Webhook & Inngest ingestion.
- * 
- * Usage: npx tsx scripts/load-test.ts
- */
-
-// Load test script
+import crypto from 'crypto';
 
 const TOTAL_REQUESTS = 50;
 const CONCURRENCY = 10;
-const ENDPOINT = 'http://localhost:3000/api/webhook/whatsapp';
+// Use TEST_TARGET_URL if provided, otherwise default to local. 
+// Allows testing PROD: TEST_TARGET_URL=https://... npx tsx scripts/load-test.ts
+const ENDPOINT = process.env.TEST_TARGET_URL || 'http://localhost:3000/api/webhook/whatsapp';
+const APP_SECRET = process.env.WHATSAPP_APP_SECRET;
 
 const generatePayload = (i: number) => ({
     object: "whatsapp_business_account",
@@ -35,11 +31,20 @@ const generatePayload = (i: number) => ({
 
 async function sendRequest(i: number) {
     const start = Date.now();
+    const payload = JSON.stringify(generatePayload(i));
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+
+    if (APP_SECRET) {
+        const hmac = crypto.createHmac('sha256', APP_SECRET);
+        const digest = hmac.update(payload).digest('hex');
+        headers['x-hub-signature-256'] = `sha256=${digest}`;
+    }
+
     try {
         const response = await fetch(ENDPOINT, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(generatePayload(i))
+            headers,
+            body: payload
         });
         const duration = Date.now() - start;
         return { status: response.status, duration };
