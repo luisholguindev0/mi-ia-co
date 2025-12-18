@@ -3,20 +3,31 @@
  * Utility to send messages back to WhatsApp Business API
  */
 
-const WHATSAPP_API_URL = 'https://graph.facebook.com/v21.0'; // Check for latest version
-// Using process.env.WHATSAPP_PHONE_NUMBER_ID and process.env.WHATSAPP_ACCESS_TOKEN
+import crypto from 'crypto';
+
+const WHATSAPP_API_URL = 'https://graph.facebook.com/v21.0';
 
 export async function sendWhatsAppMessage(to: string, text: string) {
-    // 1. Safety check for test numbers (if needed)
     if (!to) return;
 
-    const url = `${WHATSAPP_API_URL}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
+    const token = process.env.WHATSAPP_ACCESS_TOKEN || '';
+    const secret = process.env.WHATSAPP_APP_SECRET || '';
+
+    // Generate appsecret_proof = HMAC-SHA256(access_token, app_secret)
+    // This is required because your App has "Require App Secret" enabled.
+    const appSecretProof = crypto
+        .createHmac('sha256', secret)
+        .update(token)
+        .digest('hex');
+
+    // We pass appsecret_proof as a query param, NOT in the body
+    const url = `${WHATSAPP_API_URL}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages?appsecret_proof=${appSecretProof}`;
 
     try {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
+                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
