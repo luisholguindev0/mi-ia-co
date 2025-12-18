@@ -7,7 +7,7 @@ import { clearSettingsCache } from '@/lib/settings';
 /**
  * Update a business setting
  */
-export async function updateSetting(key: string, value: any, userId?: string): Promise<boolean> {
+export async function updateSetting(key: string, value: unknown, userId?: string): Promise<boolean> {
     const { error } = await supabaseAdmin
         .from('business_settings')
         .update({

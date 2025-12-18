@@ -33,6 +33,7 @@ interface AgentContext {
     phoneNumber: string;
     userMessage: string;
     conversationHistory: string; // NEW: Full conversation history string
+    conversationSummary?: string | null; // NEW: Long-term memory
     currentState: string;
 }
 
@@ -58,6 +59,7 @@ export async function runDoctorAgent(ctx: AgentContext): Promise<AgentResponse> 
         const systemPrompt = DOCTOR_SYSTEM_PROMPT
             .replace('{{RETRIEVED_CONTEXT}}', ragContext)
             .replace('{{CONVERSATION_HISTORY}}', ctx.conversationHistory)
+            .replace('{{CONVERSATION_SUMMARY}}', ctx.conversationSummary || "No hay resumen previo.")
             .replace('{{BUSINESS_HOURS}}', businessHoursText)
             .replace('{{USER_MESSAGE}}', ctx.userMessage);
 
@@ -112,6 +114,11 @@ export async function runCloserAgent(ctx: AgentContext): Promise<AgentResponse> 
         const systemPrompt = CLOSER_SYSTEM_PROMPT
             .replace('{{CURRENT_DATETIME}}', new Date().toISOString())
             .replace('{{CONVERSATION_HISTORY}}', ctx.conversationHistory)
+            // CloserAgent doesn't strictly need summary but good to have context if needed
+            // However, the prompt template might not have the placeholder.
+            // Let's check prompts.ts. It doesn't. We only added it to DOCTOR.
+            // So we leave it as is for Closer, or add it.
+            // For now, adhering to prompts.ts structure.
             .replace('{{USER_MESSAGE}}', ctx.userMessage);
 
         const { object: response } = await generateObject({
@@ -216,4 +223,38 @@ async function logAgentDecision(params: {
     } catch (error) {
         console.error('Failed to log agent decision:', error);
     }
+}
+
+/**
+ * Summarizes the conversation for long-term memory.
+ * Condenses previous summary + new messages into a concise update.
+ */
+export async function summarizeConversation(
+    currentSummary: string | null,
+    newMessages: Array<{ role: string; content: string }>
+): Promise<string> {
+    // If no new messages, return existing summary
+    if (!newMessages || newMessages.length === 0) return currentSummary || "";
+
+    const { text } = await generateText({
+        model: deepseek('deepseek-chat'), // Use fast model for summarization
+        system: `You are an expert secretary. Your job is to summarize conversation logs into a concise but detailed "Long Term Memory" for a CRM system. 
+        
+        Rules:
+        1. Keep important details: Names, specific business problems, dates mentioned, preferences.
+        2. Discard filler: "Hello", "How are you", "Ok".
+        3. Merge with the EXISTING SUMMARY if provided.
+        4. Output ONLY the new summary text. No preamble.`,
+        prompt: `
+        EXISTING SUMMARY:
+        "${currentSummary || "None"}"
+
+        NEW MESSAGES TO INTEGRATE:
+        ${newMessages.map(m => `${m.role}: ${m.content}`).join('\n')}
+        
+        GENERATE UPDATED SUMMARY:
+        `,
+    });
+
+    return text;
 }

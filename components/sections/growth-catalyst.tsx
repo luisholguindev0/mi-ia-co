@@ -71,10 +71,12 @@ export function GrowthCatalyst() {
                 setCurrentWordIndex((prev) => (prev + 1) % wordVariations.length);
             }, 2500); // Change every 2.5 seconds
             return () => clearInterval(interval);
-        } else {
-            setCurrentWordIndex(0); // Reset when not visible
+        } else if (currentWordIndex !== 0) {
+            // Use setTimeout(0) to defer state update to next tick
+            const timer = setTimeout(() => setCurrentWordIndex(0), 0);
+            return () => clearTimeout(timer);
         }
-    }, [activeText]);
+    }, [activeText, currentWordIndex]);
 
     return (
         <section ref={containerRef} className="relative pt-0 pb-16 bg-black overflow-hidden">

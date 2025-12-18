@@ -22,7 +22,7 @@ export default async function AnalyticsPage() {
         .from('leads')
         .select('id, status, profile, lead_score, created_at')
 
-    const { count: totalMessages } = await supabase
+    /* const { count: totalMessages } = */ await supabase
         .from('messages')
         .select('*', { count: 'exact', head: true })
 
@@ -43,7 +43,8 @@ export default async function AnalyticsPage() {
 
     // Group by industry
     const industryBreakdown = leads?.reduce((acc, lead) => {
-        const industry = (lead.profile as any)?.industry || 'unknown'
+        const profile = lead.profile as { industry?: string } | null
+        const industry = profile?.industry || 'unknown'
         acc[industry] = (acc[industry] || 0) + 1
         return acc
     }, {} as Record<string, number>) || {}
@@ -51,7 +52,8 @@ export default async function AnalyticsPage() {
     // Group by pain points
     const painPointsBreakdown: Record<string, number> = {}
     leads?.forEach(lead => {
-        const painPoints = (lead.profile as any)?.pain_points || []
+        const profile = lead.profile as { pain_points?: string[] } | null
+        const painPoints = profile?.pain_points || []
         painPoints.forEach((pp: string) => {
             painPointsBreakdown[pp] = (painPointsBreakdown[pp] || 0) + 1
         })
@@ -146,12 +148,12 @@ export default async function AnalyticsPage() {
 }
 
 function KpiCard({ icon: Icon, label, value, accent = 'indigo' }: {
-    icon: any,
+    icon: React.ComponentType<{ className?: string }>,
     label: string,
     value: string | number,
     accent?: 'indigo' | 'emerald' | 'blue' | 'purple'
 }) {
-    const accentColors = {
+    const accentColors: Record<string, string> = {
         indigo: 'text-indigo-400',
         emerald: 'text-emerald-400',
         blue: 'text-blue-400',

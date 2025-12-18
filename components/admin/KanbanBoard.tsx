@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { DndContext, DragOverlay, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors, DragStartEvent, DragOverEvent, DragEndEvent } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createClient } from '@/utils/supabase/client';
@@ -13,8 +13,15 @@ type Lead = {
     id: string;
     phone_number: string;
     status: string;
-    profile: any;
+    profile: {
+        name?: string;
+        company?: string;
+        role?: string;
+        [key: string]: unknown;
+    };
+    lead_score?: number;
     created_at: string;
+    last_active?: string;
 };
 
 const COLUMNS = [
@@ -188,7 +195,7 @@ export function KanbanBoard() {
                 ))}
             </div>
             <DragOverlay>
-                {activeId ? <div className="p-4 bg-zinc-800 rounded shadow-xl ring-2 ring-indigo-500 opacity-80 rotate-3 cursor-grabbing w-72 h-20 text-white">Dragging...</div> : null}
+                {activeId ? <div className="p-4 bg-zinc-800 rounded shadow-xl ring-2 ring-indigo-500 opacity-80 rotate-3 cursor-grabbing w-72 h-20 text-white flex items-center justify-center">Dragging Lead...</div> : null}
             </DragOverlay>
         </DndContext>
     );
@@ -231,9 +238,6 @@ function SortableItem(props: { id: string; lead: Lead; onClick: () => void }) {
                             {props.lead.profile.company}
                         </span>
                     )}
-                    <span className="bg-zinc-800 px-1.5 py-0.5 rounded text-[10px]">
-                        Warn: {Math.floor(Math.random() * 5)}%
-                    </span>
                 </div>
             </div>
         </div>

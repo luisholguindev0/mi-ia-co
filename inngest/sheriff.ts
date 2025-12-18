@@ -18,7 +18,6 @@ export const theSheriff = inngest.createFunction(
             const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
             // Find appointments that are unconfirmed and older than 1 hour
-            // Note: We need 'created_at' in the table.
             const { data: staleAppointments, error: fetchError } = await supabaseAdmin
                 .from("appointments")
                 .select("id")
@@ -46,7 +45,6 @@ export const theSheriff = inngest.createFunction(
         const remindersResult = await step.run("send-reminders", async () => {
             const now = new Date();
             // Look for appointments starting between 23 and 25 hours from now
-            // This window ensures that if the cron runs every hour, we catch the 24h mark
             const windowStart = new Date(now.getTime() + 23 * 60 * 60 * 1000).toISOString();
             const windowEnd = new Date(now.getTime() + 25 * 60 * 60 * 1000).toISOString();
 
@@ -70,11 +68,9 @@ export const theSheriff = inngest.createFunction(
 
             for (const appointment of upcoming) {
                 try {
-                    // @ts-ignore - Supabase types are dynamic here
                     const leadData = appointment.leads;
                     const lead = Array.isArray(leadData) ? leadData[0] : leadData;
 
-                    // @ts-ignore
                     const name = lead?.profile?.name || "Hola";
                     const phoneNumber = lead?.phone_number;
 
@@ -100,9 +96,10 @@ export const theSheriff = inngest.createFunction(
                         .eq("id", appointment.id);
 
                     count++;
-                } catch (e: any) {
+                } catch (e: unknown) {
+                    const errorMessage = e instanceof Error ? e.message : String(e);
                     console.error(`Failed to send reminder for appointment ${appointment.id}:`, e);
-                    errors.push({ id: appointment.id, error: e.message });
+                    errors.push({ id: appointment.id, error: errorMessage });
                 }
             }
 

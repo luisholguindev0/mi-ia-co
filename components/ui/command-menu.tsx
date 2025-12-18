@@ -2,12 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Command, Terminal, ExternalLink, Moon, Sun, ArrowRight, Video } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Command, Terminal, ExternalLink, Moon, ArrowRight, Video } from "lucide-react";
 
 export function CommandMenu() {
     const [open, setOpen] = useState(false);
-    const router = useRouter();
 
     // Toggle with Cmd+K
     useEffect(() => {

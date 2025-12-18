@@ -26,7 +26,7 @@ export function Hero() {
     const containerRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
     const { selectedIndustry } = useIndustryStore();
-    const content = HEADLINES[selectedIndustry];
+    const content = HEADLINES[selectedIndustry as keyof typeof HEADLINES] || HEADLINES.generic;
 
     useEffect(() => {
         const updateTime = () => {
@@ -153,7 +153,7 @@ export function Hero() {
             >
                 <div className="flex items-center gap-4 text-[10px] font-mono font-bold text-white/40 tracking-widest uppercase">
                     <span>LATENCIA: 12ms</span>
-                    <span className="text-white/20">//</span>
+                    <span className="text-white/20">{"//"}</span>
                     <span>SERVIDOR: BOGOTA-1</span>
                 </div>
             </motion.div>

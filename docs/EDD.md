@@ -247,7 +247,14 @@ Usamos delimitadores XML <user_input> para aislar explícitamente el texto del u
 
 Semantic Validator: Un modelo pequeño (como un clasificador BERT o un GPT-4o-mini barato) analiza el input del usuario buscando patrones de jailbreak ("DAN mode", "Ignore previous instructions") antes de pasarlo al modelo principal.
 
-5.2. Hallucination Control (Grounding)
+5.2. Role-Based Access Control (RBAC)
+- **Strategy**: Use Supabase `app_metadata` to store roles (e.g., `{"role": "admin"}`).
+- **Enforcement**:
+  - **Middleware**: Intercepts `/admin` routes and checks `user.app_metadata.role === 'admin'`.
+  - **Server-Side APIs**: Sensitive endpoints (e.g., `/api/export/*`) perform explicit role checks before processing.
+  - **Security Layer**: `app_metadata` is managed via Supabase Admin (SQL/Dashboard) and cannot be manipulated by the user from the frontend client.
+
+5.3. Hallucination Control (Grounding)
 
 Citation Enforcement: El modelo R1 está configurado para fallar si no puede encontrar una fuente en la knowledge_base.
 
@@ -281,19 +288,26 @@ WEEK 2: The Cockpit (Admin UI & Realtime) - **[COMPLETED]**
 
 [x] Day 5: Pulido de UI (Dark Mode, Animaciones Framer Motion, Feedback visual).
 
-WEEK 3: Production Hardening & Reliability - **[CURRENT FOCUS]**
+WEEK 3: Production Hardening & Reliability - **[COMPLETED]**
 
 [x] Day 1: Implementar "The Sheriff" (Cron Jobs via Inngest) para confirmaciones automáticas y recordatorios.
-
 [x] Day 2: Red Teaming. Stress test de la base de datos y RAG pipeline. Intentar romper el bot.
-
 [x] Day 3: Pruebas de Carga. Simular concurrencia en webhooks.
-
 [x] Day 4: Optimización de Consultas y Índices (Explain Analyze).
-
 [x] Day 5: Preparación de Entorno de Producción (Variables, Secretos, Dominios).
 
-WEEK 4: The Grand Opening (Launch & Scale)
+STABILITY & SECURITY HARDENING (POST-WEEK 3) - **[COMPLETED]**
+[x] Full Codebase Verification: Audited Sheriff, Guardrails, and RAG.
+[x] Security Lockdown: Applied RBAC (Role-Based Access Control) to Middleware and Export APIs.
+[x] Global Auth Protection: Hardened `middleware.ts` to enforce `admin` role checks.
+[x] Webhook Reliability: Hardened WhatsApp gateway to "Fail-Closed" mode.
+
+STABILITY & MAINTENANCE PHASE (LINTING & TYPES) - **[COMPLETED]**
+[x] Resolve all `npm run lint` errors and warnings.
+[x] Elimination of `any` types for strict production type safety.
+[x] Verify zero-error production build.
+
+WEEK 4: The Grand Opening (Launch & Scale) - **[CURRENT FOCUS]**
 
 [ ] Day 1: Soft Launch. Invitar a 5-10 amigos empresarios a probar el flujo completo (End-to-End).
 

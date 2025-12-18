@@ -1,7 +1,6 @@
 "use client";
 
-import { useRef } from "react";
-import { useScroll, useTransform, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { MagneticButton } from "@/components/ui/magnetic-button";
 import { useSfx } from "@/hooks/use-sfx";
 

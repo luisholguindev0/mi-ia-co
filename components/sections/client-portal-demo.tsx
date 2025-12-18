@@ -1,199 +1,189 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-import Image from "next/image";
-import { GlassCard } from "@/components/ui/glass-card";
 import { motion, AnimatePresence } from "framer-motion";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { Activity, Users, DollarSign, MessageSquare, Settings, BarChart2, CheckCircle2 } from "lucide-react";
+import { Activity, Users, DollarSign, MessageSquare, Settings, BarChart2 } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
 
 const LOG_EVENTS = [
-    { type: "sales", msg: "Stripe: Pago de $1,200 Recibido (Plan Empresarial)", color: "text-green-400" },
-    { type: "ai", msg: "Agente IA: Llamada demo agendada con Sarah (Score Lead: 92)", color: "text-blue-400" },
-    { type: "traffic", msg: "Pico de Tráfico: +43% visitantes de campaña LinkedIn", color: "text-purple-400" },
-    { type: "system", msg: "Sistema: Base de datos auto-escalada para manejar carga", color: "text-yellow-400" },
-    { type: "ai", msg: "Agente IA: Respondió consulta técnica sobre límites de API", color: "text-blue-400" },
-    { type: "sales", msg: "CRM: Nuevo lead de alto valor detectado (Fortune 500)", color: "text-green-400" },
-    { type: "email", msg: "Bot de Email: Secuencia de seguimiento iniciada para 50 leads", color: "text-white/70" },
+    { id: 1, text: "Conexión establecida con Nodo WhatsApp", type: "system" },
+    { id: 2, text: "Escaneo de perfil: Lead Calificado", type: "ai" },
+    { id: 3, text: "Analizando intención de compra...", type: "ai" },
+    { id: 4, text: "DoctorAgent: Recomendación generada", type: "ai" },
+    { id: 5, text: "CloserAgent: Enlace de pago enviado", type: "success" },
+    { id: 6, text: "Lead Score actualizado: 98/100", type: "system" },
+    { id: 7, text: "Notificación enviada a Luis", type: "system" }
 ];
 
 export function ClientPortalDemo() {
-    const sectionRef = useRef<HTMLDivElement>(null);
-    const cardRef = useRef<HTMLDivElement>(null);
-    const [logs, setLogs] = useState<Array<{ type: string; msg: string; color: string; timestamp: string }>>([]);
+    const [logs, setLogs] = useState<{ id: number; text: string; timestamp: string }[]>([]);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     // Live Feed Simulation - Initialize and update logs on client only to avoid hydration mismatch
     useEffect(() => {
-        // Initialize with first 3 logs on mount (client-side only)
-        const initialLogs = LOG_EVENTS.slice(0, 3).map(log => ({
-            ...log,
-            timestamp: new Date().toLocaleTimeString()
-        }));
-        setLogs(initialLogs);
+        // Defer log initialization
+        const timer = setTimeout(() => {
+            const initialLogs = Array.from({ length: 5 }).map((_, i) => ({
+                id: i,
+                text: i === 0 ? "Conexión establecida con Nodo WhatsApp" :
+                    i === 1 ? "Escaneo de perfil: Lead Calificado" :
+                        i === 2 ? "Analizando intención de compra..." :
+                            i === 3 ? "DoctorAgent: Recomendación generada" :
+                                "CloserAgent: Enlace de pago enviado",
+                timestamp: new Date().toLocaleTimeString()
+            }));
+            setLogs(initialLogs);
+        }, 0);
 
         const interval = setInterval(() => {
             setLogs(prev => {
                 const nextLog = LOG_EVENTS[Math.floor(Math.random() * LOG_EVENTS.length)];
-                const newLogs = [{ ...nextLog, timestamp: new Date().toLocaleTimeString() }, ...prev];
+                const newLogs = [{ ...nextLog, id: Date.now(), timestamp: new Date().toLocaleTimeString() }, ...prev];
                 return newLogs.slice(0, 5); // Keep only recent 5
             });
         }, 2500);
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(interval);
+            clearTimeout(timer);
+        };
     }, []);
 
     useEffect(() => {
         const ctx = gsap.context(() => {
-            if (sectionRef.current && cardRef.current) {
-                gsap.fromTo(cardRef.current,
-                    {
-                        rotationX: 45,
-                        scale: 0.8,
-                        z: -100,
-                        transformOrigin: "center top",
-                    },
-                    {
-                        scrollTrigger: {
-                            trigger: sectionRef.current,
-                            start: "top bottom",
-                            end: "center center",
-                            scrub: 1,
-                        },
-                        rotationX: 0,
-                        scale: 1,
-                        z: 0,
-                        ease: "power2.out",
-                        immediateRender: true
-                    }
-                );
-            }
-        }, sectionRef);
-
+            gsap.from(".portal-card", {
+                y: 100,
+                opacity: 0,
+                duration: 1,
+                stagger: 0.2,
+                scrollTrigger: {
+                    trigger: containerRef.current,
+                    start: "top 80%",
+                }
+            });
+        }, containerRef);
         return () => ctx.revert();
     }, []);
 
     return (
-        <section ref={sectionRef} className="min-h-screen py-24 bg-black overflow-hidden relative flex flex-col items-center justify-center">
-            {/* Text Header */}
-            <div className="text-center mb-12 z-10 px-4">
-                <h2 className="text-3xl md:text-6xl font-bold text-white tracking-tighter mb-4">
-                    NO SOLO OBTIENES UN SITIO WEB.
-                    <br />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
-                        OBTIENES UN CENTRO DE COMANDO.
-                    </span>
-                </h2>
-                <p className="text-white/50 text-xl font-mono">
-                    Analíticas en tiempo real, logs de chat de IA y seguimiento de ingresos.
-                </p>
-            </div>
-
-            {/* The 3D Dashboard Mockup */}
-            <div className="w-full max-w-6xl px-4 [perspective:1000px]">
-                <div ref={cardRef} className="relative w-full h-[600px] md:h-auto md:aspect-video bg-[#0a0a0a] rounded-xl border border-white/10 shadow-2xl overflow-hidden group">
-
-                    {/* Fake Sidebar */}
-                    <div className="absolute top-0 left-0 w-64 h-full border-r border-white/5 bg-black/50 p-6 hidden md:block">
-                        <div className="flex items-center gap-2 mb-8 text-white/80 font-bold tracking-widest">
-                            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
-                            MI-IA INC.
+        <section ref={containerRef} className="py-24 px-4 bg-slate-950 relative overflow-hidden">
+            <div className="max-w-7xl mx-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                    {/* Left side: Text */}
+                    <div className="space-y-8">
+                        <div className="inline-block py-1 px-3 rounded-full bg-blue-500/10 border border-blue-500/20 backdrop-blur-md">
+                            <span className="text-blue-400 text-xs font-bold tracking-[0.2em] uppercase">Control Total</span>
                         </div>
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-3 text-white/60 p-2 hover:bg-white/5 rounded-lg cursor-pointer transition-colors bg-white/5 border border-white/5">
-                                <BarChart2 size={18} /> Dashboard
-                            </div>
-                            <div className="flex items-center gap-3 text-white/60 p-2 hover:bg-white/5 rounded-lg cursor-pointer transition-colors">
-                                <MessageSquare size={18} /> Chats IA
-                            </div>
-                            <div className="flex items-center gap-3 text-white/60 p-2 hover:bg-white/5 rounded-lg cursor-pointer transition-colors">
-                                <Users size={18} /> CRM
-                            </div>
-                            <div className="flex items-center gap-3 text-white/60 p-2 hover:bg-white/5 rounded-lg cursor-pointer transition-colors">
-                                <DollarSign size={18} /> Ingresos
-                            </div>
-                            <div className="flex items-center gap-3 text-white/60 p-2 hover:bg-white/5 rounded-lg cursor-pointer transition-colors mt-8">
-                                <Settings size={18} /> Configuración
-                            </div>
+                        <h2 className="text-4xl md:text-6xl font-bold text-white tracking-tight">
+                            El Cerebro de tu <span className="text-blue-500">Operación</span>
+                        </h2>
+                        <p className="text-lg text-slate-400 leading-relaxed font-light">
+                            Mientras tú duermes, tu IA está cerrando ventas, calificando leads y organizando tu agenda. Mira cómo se ve la automatización real.
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            {[
+                                { label: "Booking Ilimitado", icon: Settings },
+                                { label: "Análisis en Vivo", icon: BarChart2 },
+                                { label: "CRM Autónomo", icon: Users },
+                                { label: "Multi-Agente", icon: Activity }
+                            ].map((item, i) => (
+                                <div key={i} className="flex items-center gap-3 p-4 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 transition-colors">
+                                    <item.icon className="w-5 h-5 text-blue-500" />
+                                    <span className="text-sm text-white/80">{item.label}</span>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
-                    {/* Main Content Area */}
-                    <div className="ml-0 md:ml-64 p-4 md:p-8 h-full flex flex-col">
-                        {/* Header */}
-                        <div className="flex justify-between items-center mb-6 md:mb-8">
-                            <h3 className="text-white text-xl font-bold">Resumen</h3>
-                            <div className="flex gap-4">
-                                <div className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] md:text-xs text-white/60 animate-pulse whitespace-nowrap">
-                                    ● Estado del Sistema: EN LÍNEA
-                                </div>
-                            </div>
-                        </div>
+                    {/* Right side: Mock Terminal/Dashboard */}
+                    <div className="relative">
+                        {/* Glow effect */}
+                        <div className="absolute -inset-4 bg-blue-500/20 blur-3xl opacity-20" />
 
-                        {/* Charts Area */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 h-full min-h-0 basis-1/2">
-                            <div className="md:col-span-2 bg-white/5 rounded-lg border border-white/5 relative overflow-hidden flex items-end p-4">
-                                <div className="absolute top-4 left-4 text-xs text-white/40 uppercase tracking-widest">Tráfico en Vivo</div>
-                                <div className="w-full h-full flex items-end justify-between gap-1 opacity-60">
-                                    {/* Randomized Bars */}
-                                    {[...Array(20)].map((_, i) => (
-                                        <motion.div
-                                            key={i}
-                                            animate={{ height: [Math.random() * 100 + "%", Math.random() * 100 + "%"] }}
-                                            transition={{ duration: 2, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
-                                            className="flex-1 bg-gradient-to-t from-blue-500/20 to-purple-500/50 rounded-t-sm"
-                                        />
+                        <div className="relative border border-white/10 rounded-2xl bg-slate-900 shadow-2xl overflow-hidden">
+                            {/* Header */}
+                            <div className="bg-slate-800/50 px-4 py-3 border-b border-white/10 flex items-center justify-between">
+                                <div className="flex gap-1.5">
+                                    <div className="w-3 h-3 rounded-full bg-red-500/50" />
+                                    <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
+                                    <div className="w-3 h-3 rounded-full bg-green-500/50" />
+                                </div>
+                                <div className="text-[10px] text-slate-500 font-mono">STATUS: ACTIVE // AI_MODE: AGGRESSIVE</div>
+                            </div>
+
+                            {/* Content */}
+                            <div className="p-6 space-y-6">
+                                {/* Stats Row */}
+                                <div className="grid grid-cols-3 gap-4">
+                                    {[
+                                        { label: "Leads", val: "142", icon: Users, color: "text-blue-400" },
+                                        { label: "Citas", val: "28", icon: Activity, color: "text-green-400" },
+                                        { label: "Ventas", val: "$12k", icon: DollarSign, color: "text-purple-400" }
+                                    ].map((stat, i) => (
+                                        <div key={i} className="portal-card p-3 rounded-lg border border-white/5 bg-slate-800/30">
+                                            <div className="flex justify-between items-start mb-1">
+                                                <stat.icon className={`w-4 h-4 ${stat.color}`} />
+                                                <span className="text-[10px] text-slate-500">Hoy</span>
+                                            </div>
+                                            <div className="text-xl font-bold text-white">{stat.val}</div>
+                                            <div className="text-[10px] text-slate-500 uppercase">{stat.label}</div>
+                                        </div>
                                     ))}
                                 </div>
-                            </div>
 
-                            <div className="bg-white/5 rounded-lg border border-white/5 p-4 flex flex-row md:flex-col justify-between items-center md:items-start relative overflow-hidden group-hover:border-purple-500/30 transition-colors duration-500 gap-4">
-                                <div className="flex items-center justify-between w-full">
-                                    <span className="text-xs text-white/40 uppercase tracking-widest whitespace-nowrap">Usuarios Activos</span>
-                                    <Users className="w-4 h-4 text-purple-400 hidden md:block" />
+                                {/* Main Graph Area */}
+                                <div className="portal-card h-40 rounded-lg border border-white/5 bg-slate-800/30 p-4 flex flex-col justify-end">
+                                    <div className="flex items-end gap-1 h-full mb-2">
+                                        {Array.from({ length: 12 }).map((_, i) => (
+                                            <motion.div
+                                                key={i}
+                                                animate={{ height: [(20 + (i * 5)) + "%", (40 + (i * 3)) + "%", (20 + (i * 5)) + "%"] }}
+                                                transition={{ duration: 2, repeat: Infinity, repeatType: "reverse", ease: "easeInOut", delay: i * 0.1 }}
+                                                className="flex-1 bg-gradient-to-t from-blue-500/20 to-purple-500/50 rounded-t-sm"
+                                            />
+                                        ))}
+                                    </div>
+                                    <div className="flex justify-between text-[10px] text-slate-500 font-mono">
+                                        <span>08:00</span>
+                                        <span>12:00</span>
+                                        <span>16:00</span>
+                                        <span>20:00</span>
+                                    </div>
                                 </div>
-                                <div className="text-3xl md:text-4xl font-bold text-white font-mono">1,248</div>
-                                <div className="text-xs text-green-400 flex items-center gap-1 whitespace-nowrap">
-                                    <Activity className="w-3 h-3" /> <span className="hidden sm:inline">+12% vs última hora</span><span className="inline sm:hidden">+12%</span>
-                                </div>
-                            </div>
-                        </div>
 
-                        {/* Live Feed - NOW INTERACTIVE */}
-                        <div className="mt-4 md:mt-6 flex-1 bg-black/40 rounded-lg p-4 overflow-hidden border border-white/5 min-h-0 basis-1/2 flex flex-col">
-                            <div className="text-xs text-white/40 uppercase tracking-widest mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                                <span>Log de Actividad IA en Vivo</span>
-                                <span className="text-green-500 animate-pulse text-[10px] whitespace-nowrap flex items-center gap-1">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>
-                                    RECIBIENDO DATOS
-                                </span>
-                            </div>
-                            <div className="space-y-3 font-mono text-xs overflow-hidden relative flex-1">
-                                <AnimatePresence initial={false} mode="popLayout">
-                                    {logs.map((log, i) => (
-                                        <motion.div
-                                            key={`${log.msg}-${i}`}
-                                            layout
-                                            initial={{ x: -20, opacity: 0 }}
-                                            animate={{ x: 0, opacity: 1 }}
-                                            exit={{ opacity: 0, scale: 0.95 }}
-                                            transition={{ duration: 0.3 }}
-                                            className="flex items-center gap-3 text-white/80 border-l-2 border-white/5 pl-3 py-1"
-                                        >
-                                            <span className="text-white/30 text-[10px] min-w-[50px]">{log.timestamp}</span>
-                                            <span className={`${log.color} truncate`}>{log.msg}</span>
-                                        </motion.div>
-                                    ))}
-                                </AnimatePresence>
-                                <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+                                {/* Terminal Feed */}
+                                <div className="portal-card space-y-3 font-mono text-xs">
+                                    <div className="flex items-center gap-2 text-slate-500 border-b border-white/5 pb-2">
+                                        <MessageSquare className="w-3 h-3" />
+                                        <span>LIVE AGENT FEED</span>
+                                    </div>
+                                    <div className="space-y-2 max-h-[120px] overflow-hidden">
+                                        <AnimatePresence>
+                                            {logs.map((log) => (
+                                                <motion.div
+                                                    key={log.id}
+                                                    initial={{ opacity: 0, x: -10 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    exit={{ opacity: 0, y: 10 }}
+                                                    className="flex justify-between items-start group"
+                                                >
+                                                    <div className="flex gap-2">
+                                                        <span className="text-blue-500/50">{">"}</span>
+                                                        <span className="text-slate-300">{log.text}</span>
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-600 tabular-nums">{log.timestamp}</span>
+                                                </motion.div>
+                                            ))}
+                                        </AnimatePresence>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
                     </div>
-
-                    {/* Glow Overlay on hover */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
                 </div>
             </div>
         </section>

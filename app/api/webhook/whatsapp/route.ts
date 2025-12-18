@@ -32,7 +32,6 @@ export async function POST(req: NextRequest) {
         const bodyText = await req.text();
         console.log('📦 Raw Body:', bodyText.substring(0, 200) + '...');
 
-        // 1. Security Check (HMAC)
         if (process.env.WHATSAPP_APP_SECRET) {
             const signature = req.headers.get('x-hub-signature-256');
             console.log(`🔐 Verifying Signature: ${signature ? 'Present' : 'MISSING'}`);
@@ -50,7 +49,8 @@ export async function POST(req: NextRequest) {
                 return new NextResponse('Unauthorized', { status: 401 });
             }
         } else {
-            console.warn('⚠️ WHATSAPP_APP_SECRET not set - Skipping HMAC check');
+            console.error('❌ CRITICAL: WHATSAPP_APP_SECRET not set. Gateway closed.');
+            return new NextResponse('Internal Configuration Error', { status: 500 });
         }
 
         const body = JSON.parse(bodyText);
@@ -76,8 +76,9 @@ export async function POST(req: NextRequest) {
                     },
                 });
                 console.log(`🚀 Event sent to Inngest: ${JSON.stringify(ids)}`);
-            } catch (err: any) {
-                console.error(`❌ Inngest Send Failed: ${err.message}`);
+            } catch (err: unknown) {
+                const errorMessage = err instanceof Error ? err.message : String(err);
+                console.error(`❌ Inngest Send Failed: ${errorMessage}`);
                 // We typically still want to return 200 to WhatsApp to avoid retries of a broken handler
             }
         }

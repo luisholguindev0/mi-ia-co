@@ -5,7 +5,7 @@
  * Usage: npx tsx scripts/load-test.ts
  */
 
-import http from 'http';
+// Load test script
 
 const TOTAL_REQUESTS = 50;
 const CONCURRENCY = 10;
@@ -51,8 +51,7 @@ async function sendRequest(i: number) {
 async function runLoadTest() {
     console.log(`🚀 Starting Load Test: ${TOTAL_REQUESTS} requests, concurrency ${CONCURRENCY}`);
 
-    let completed = 0;
-    const results: any[] = [];
+    const results: Array<{ status: number; duration: number; error?: unknown }> = [];
 
     // Chunking
     for (let i = 0; i < TOTAL_REQUESTS; i += CONCURRENCY) {

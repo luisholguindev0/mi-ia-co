@@ -170,7 +170,7 @@ export function Services() {
 
                                     <div className="mt-8 border-t border-white/10 pt-6">
                                         <p className="font-mono text-sm text-purple-200/50">
-                                    // {service.tech}
+                                            {"//"} {service.tech}
                                         </p>
                                     </div>
                                     {/* Desktop: Icon as background decoration in the content area */}

@@ -6,10 +6,16 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
     const supabase = await createClient()
 
-    // Check auth
+    // Check auth and role
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Role-Based Access Control (RBAC)
+    const role = user.app_metadata?.role
+    if (role !== 'admin') {
+        return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 })
     }
 
     // Fetch all leads with relevant data
@@ -39,7 +45,7 @@ export async function GET() {
     ]
 
     const rows = leads?.map(lead => {
-        const profile = lead.profile as any || {}
+        const profile = (lead.profile as Record<string, unknown>) || {}
         return [
             lead.phone_number || '',
             profile.name || '',
@@ -47,7 +53,7 @@ export async function GET() {
             profile.industry || '',
             profile.location || '',
             profile.role || '',
-            (profile.pain_points || []).join('; '),
+            (profile.pain_points as string[] || []).join('; '),
             profile.contact_reason || '',
             lead.status || '',
             lead.lead_score || 0,

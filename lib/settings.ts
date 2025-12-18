@@ -9,7 +9,7 @@ import { supabaseAdmin } from '@/lib/db';
 
 // Cache settings for 5 minutes to avoid DB hits on every request
 const CACHE_TTL_MS = 5 * 60 * 1000;
-let settingsCache: Map<string, { value: any; expiresAt: number }> = new Map();
+const settingsCache: Map<string, { value: unknown; expiresAt: number }> = new Map();
 
 // Type definitions for settings
 export interface DaySchedule {
@@ -109,7 +109,7 @@ export async function getBusinessSettings(): Promise<BusinessSettings> {
 /**
  * Update a business setting
  */
-export async function updateSetting(key: string, value: any, userId?: string): Promise<boolean> {
+export async function updateSetting(key: string, value: unknown, userId?: string): Promise<boolean> {
     const { error } = await supabaseAdmin
         .from('business_settings')
         .update({

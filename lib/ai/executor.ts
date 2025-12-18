@@ -156,9 +156,10 @@ export async function executeToolCalls(
                     console.warn(`⚠️ Unknown tool: ${call.tool}`);
                     results.push({ tool: call.tool, success: false, error: 'Unknown tool' });
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
             console.error(`❌ Tool execution failed (${call.tool}):`, error);
-            results.push({ tool: call.tool, success: false, error: error.message });
+            results.push({ tool: call.tool, success: false, error: errorMessage });
         }
     }
 

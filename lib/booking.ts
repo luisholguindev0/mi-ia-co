@@ -5,7 +5,7 @@
  */
 
 import { supabaseAdmin } from '@/lib/db';
-import { getBusinessSettings, getDaySchedule, type BusinessSettings } from '@/lib/settings';
+import { getBusinessSettings, getDaySchedule } from '@/lib/settings';
 
 interface TimeSlot {
     date: string;

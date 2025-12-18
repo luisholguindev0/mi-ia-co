@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { updateSetting } from '@/lib/actions/settings';
 
+// Local interfaces moves to types folder if reused, but here they stay for clarity
 interface DaySchedule {
     enabled: boolean;
     start: string;
@@ -10,7 +11,7 @@ interface DaySchedule {
 }
 
 interface SettingsFormProps {
-    settings: Record<string, { value: any; description: string; updatedAt: string }>;
+    settings: Record<string, { value: unknown; description: string; updatedAt: string }>;
     userId: string;
 }
 
@@ -28,11 +29,11 @@ const DAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'satu
 
 export default function SettingsForm({ settings, userId }: SettingsFormProps) {
     const [businessHours, setBusinessHours] = useState<Record<string, DaySchedule>>(
-        settings.business_hours?.value || {}
+        (settings.business_hours?.value as Record<string, DaySchedule>) || {}
     );
-    const [slotDuration, setSlotDuration] = useState(settings.slot_duration?.value?.minutes || 60);
-    const [bookingBuffer, setBookingBuffer] = useState(settings.booking_buffer?.value?.hours || 2);
-    const [maxDaily, setMaxDaily] = useState(settings.max_daily_appointments?.value?.value || 8);
+    const [slotDuration, setSlotDuration] = useState((settings.slot_duration?.value as { minutes: number })?.minutes || 60);
+    const [bookingBuffer, setBookingBuffer] = useState((settings.booking_buffer?.value as { hours: number })?.hours || 2);
+    const [maxDaily, setMaxDaily] = useState((settings.max_daily_appointments?.value as { value: number })?.value || 8);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
 

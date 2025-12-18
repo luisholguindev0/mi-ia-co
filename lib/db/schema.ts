@@ -1,5 +1,4 @@
 import { pgTable, uuid, text, jsonb, timestamp, integer, vector, boolean } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
 
 // 1. LEADS
 export const leads = pgTable('leads', {
@@ -9,6 +8,7 @@ export const leads = pgTable('leads', {
     status: text('status', { enum: ['new', 'diagnosing', 'qualified', 'booked', 'nurture', 'closed_lost'] }).default('new'),
     leadScore: integer('lead_score').default(0),
     contextEmbedding: vector('context_embedding', { dimensions: 1536 }),
+    conversationSummary: text('conversation_summary'),
     lastActive: timestamp('last_active', { withTimezone: true }).defaultNow(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
     aiPaused: boolean('ai_paused').default(false),

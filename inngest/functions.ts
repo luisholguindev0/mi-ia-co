@@ -204,11 +204,12 @@ export const processWhatsAppMessage = inngest.createFunction(
                         phoneNumber: lead.phone_number,
                         userMessage: text,
                         conversationHistory: historyString, // NEW: Inject history
+                        conversationSummary: lead.conversation_summary, // NEW: Inject long-term memory
                         currentState: lead.status || "new",
                     });
                     console.log(`⏱️ Inner AI Duration: ${Date.now() - innerT}ms | Confidence: ${response.confidence}`);
                     return response;
-                } catch (err: any) {
+                } catch (err: unknown) {
                     console.error(`❌ AI Error after ${Date.now() - innerT}ms:`, err);
                     throw err;
                 }
@@ -298,6 +299,60 @@ export const processWhatsAppMessage = inngest.createFunction(
                 });
             }
 
+
+
+            // ═══════════════════════════════════════════════════════════════
+            // STEP 9: Auto-Summarization (Long-term Memory)
+            // ═══════════════════════════════════════════════════════════════
+            await step.run(`summarize-check-${messageId}`, async () => {
+                // Check total message count for this lead
+                const { count } = await supabaseAdmin
+                    .from("messages")
+                    .select("*", { count: "exact", head: true })
+                    .eq("lead_id", lead.id);
+
+                // Run summary every 20 messages
+                if (count && count > 0 && count % 20 === 0) {
+                    console.log(`🧠 Triggering Auto-Summarization (Count: ${count})`);
+
+                    // Fetch all messages since last summary? 
+                    // For simplicity in V1, we fetch the last 20 messages and merge with current summary
+                    const { data: recentMessages } = await supabaseAdmin
+                        .from("messages")
+                        .select("role, content")
+                        .eq("lead_id", lead.id)
+                        .order("created_at", { ascending: false }) // Get latest
+                        .limit(20);
+
+                    // Import dynamically to avoid circular deps if any, or just use the imported one
+                    const { summarizeConversation } = await import("@/lib/ai/agents");
+
+                    // Reverse to chronological order for the AI
+                    const chronology = (recentMessages || []).reverse();
+
+                    const newSummary = await summarizeConversation(
+                        lead.conversation_summary,
+                        chronology
+                    );
+
+                    console.log(`📝 New Summary Generated: ${newSummary.substring(0, 50)}...`);
+
+                    // Save to leads table
+                    await supabaseAdmin
+                        .from("leads")
+                        .update({ conversation_summary: newSummary })
+                        .eq("id", lead.id);
+
+                    // Log event
+                    await supabaseAdmin.from("audit_logs").insert({
+                        lead_id: lead.id,
+                        event_type: "memory_summarization",
+                        payload: { old_summary_len: lead.conversation_summary?.length || 0, new_summary_len: newSummary.length },
+                        latency_ms: 0,
+                    });
+                }
+            });
+
             const totalDuration = Date.now() - t0;
             console.log(`✅ COMPLETE: ${totalDuration}ms | Lead: ${lead.id} | History: ${conversationHistory.length} msgs`);
 
@@ -308,16 +363,19 @@ export const processWhatsAppMessage = inngest.createFunction(
                 historySize: conversationHistory.length,
             };
 
-        } catch (error: any) {
-            console.error("❌ FATAL ERROR:", error);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorStack = error instanceof Error ? error.stack : undefined;
+
+            console.error("❌ FATAL ERROR:", errorMessage);
 
             // Log error to audit_logs for debugging
             try {
                 await supabaseAdmin.from("audit_logs").insert({
                     event_type: "inngest_error",
                     payload: {
-                        error: error.message,
-                        stack: error.stack,
+                        error: errorMessage,
+                        stack: errorStack,
                         event: event.data
                     },
                     latency_ms: Date.now() - t0,
@@ -326,7 +384,7 @@ export const processWhatsAppMessage = inngest.createFunction(
                 console.error("Failed to log error:", logError);
             }
 
-            return { error: error.message };
+            return { error: errorMessage };
         }
     }
 );

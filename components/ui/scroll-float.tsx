@@ -113,6 +113,8 @@ export function ScrollFloat({
             transformOrigin: "center bottom",
         });
 
+        const currentTrigger = triggerRef?.current || container;
+
         // Create the animation
         const animation = gsap.to(elements, {
             y: 0,
@@ -125,7 +127,7 @@ export function ScrollFloat({
             ease: ease,
             stagger: stagger,
             scrollTrigger: {
-                trigger: triggerRef?.current || container,
+                trigger: currentTrigger,
                 start: scrollStart,
                 end: scrollEnd,
                 scrub: scrub,
@@ -136,7 +138,7 @@ export function ScrollFloat({
         return () => {
             animation.kill();
             ScrollTrigger.getAll().forEach((trigger) => {
-                if (trigger.vars.trigger === (triggerRef?.current || container)) {
+                if (trigger.vars.trigger === currentTrigger) {
                     trigger.kill();
                 }
             });

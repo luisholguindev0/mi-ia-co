@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const ScrambleText = ({ text, delay = 0 }: { text: string, delay?: number }) => {
@@ -48,7 +48,10 @@ export function Preloader() {
     const [dimension, setDimension] = useState({ width: 0, height: 0 });
 
     useEffect(() => {
-        setDimension({ width: window.innerWidth, height: window.innerHeight });
+        // Defer dimension setting to satisfy purity rules
+        const timer = setTimeout(() => {
+            setDimension({ width: window.innerWidth, height: window.innerHeight });
+        }, 0);
 
         const startTime = Date.now();
         const duration = 2500; // 2.5 seconds loading time
@@ -65,7 +68,10 @@ export function Preloader() {
             }
         }, 16);
 
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(interval);
+            clearTimeout(timer);
+        };
     }, []);
 
 

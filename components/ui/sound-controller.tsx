@@ -15,7 +15,7 @@ const SoundContext = createContext<SoundContextType | undefined>(undefined);
 
 export function SoundProvider({ children }: { children: React.ReactNode }) {
     const [isEnabled, setIsEnabled] = useState(false); // Muted by default
-    const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+    const [audioContext] = useState<AudioContext | null>(null);
     const humOscillator = useRef<OscillatorNode | null>(null);
     const humGain = useRef<GainNode | null>(null);
 

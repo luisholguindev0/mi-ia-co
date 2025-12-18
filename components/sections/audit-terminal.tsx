@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { GlassCard } from "@/components/ui/glass-card";
-import { motion, AnimatePresence } from "framer-motion";
-import { Terminal, Send, CheckCircle, AlertTriangle, XCircle, ArrowRight } from "lucide-react";
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Terminal, AlertTriangle, ArrowRight } from "lucide-react";
 
 export function AuditTerminal() {
     const [inputUrl, setInputUrl] = useState("");

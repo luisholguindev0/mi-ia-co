@@ -2,7 +2,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import { ChatInterceptor } from '@/components/admin/ChatInterceptor'
-import { Phone, Mail, Calendar, Archive, ArrowLeft } from 'lucide-react'
+import { Phone, Calendar, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
 // Define the correct params type for Next.js 15+
@@ -15,6 +15,14 @@ export default async function LeadPage({ params }: LeadPageProps) {
     const { id } = await params
 
     const supabase = await createClient()
+
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+        redirect('/login')
+    }
 
     // 1. Fetch Lead Data
     const { data: lead } = await supabase

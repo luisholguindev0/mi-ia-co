@@ -50,8 +50,25 @@ export function ChatInterceptor({
                     console.log('🔔 New message received:', payload.new)
                     const newMsg = payload.new as Message
                     setMessages((prev) => {
-                        // Avoid duplicates
+                        // 1. Check if exact ID exists (already handled)
                         if (prev.find(m => m.id === newMsg.id)) return prev
+
+                        // 2. Check for optimistic match (same content, same role, temp ID)
+                        // This fixes the "Ghosting" effect where manual messages appear twice
+                        const optimisticMatchIndex = prev.findIndex(m =>
+                            m.id.startsWith('temp-') &&
+                            m.content === newMsg.content &&
+                            m.role === newMsg.role
+                        )
+
+                        if (optimisticMatchIndex !== -1) {
+                            // Replace optimistic message with real one
+                            const newMessages = [...prev]
+                            newMessages[optimisticMatchIndex] = newMsg
+                            return newMessages
+                        }
+
+                        // 3. Otherwise, append new message
                         return [...prev, newMsg]
                     })
                 }
@@ -185,7 +202,7 @@ export function ChatInterceptor({
                 </div>
                 <p className="mt-2 text-[10px] text-zinc-500 flex items-center gap-1">
                     <ShieldAlert className="w-3 h-3" />
-                    Messages update in real-time. Manual replies log as 'human_agent'.
+                    Messages update in real-time. Manual replies log as &apos;human_agent&apos;.
                 </p>
             </div>
         </div>

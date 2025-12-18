@@ -1,12 +1,12 @@
 import { createClient } from '@/utils/supabase/server'
-import { RealtimeFeed } from '@/components/admin/RealtimeFeed'
-import { KanbanBoard } from '@/components/admin/KanbanBoard'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
+
 
 // Force dynamic behavior so the server client logic (cookies) runs on every request
 // or we can just rely on middleware protection.
 export const dynamic = 'force-dynamic'
+
+import { DashboardClient } from '@/app/admin/dashboard/DashboardClient'
 
 export default async function DashboardPage() {
     const supabase = await createClient()
@@ -23,6 +23,9 @@ export default async function DashboardPage() {
     const { count: leadCount } = await supabase.from('leads').select('*', { count: 'exact', head: true })
     const { count: appointmentCount } = await supabase.from('appointments').select('*', { count: 'exact', head: true })
     const { count: activeLeads } = await supabase.from('leads').select('*', { count: 'exact', head: true }).neq('status', 'closed_lost')
+
+    // Fetch All Leads for Client Component
+    const { data: leads } = await supabase.from('leads').select('*').order('last_active', { ascending: false })
 
     return (
         <div className="min-h-screen bg-zinc-950 text-white p-8">
@@ -43,18 +46,8 @@ export default async function DashboardPage() {
                     <KpiCard label="Conversion Rate" value="3.2%" trend="+0.4%" />
                 </div>
 
-                {/* Main Grid: Feed + Chat Interceptor (Mock) */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-1">
-                        <RealtimeFeed />
-                    </div>
-
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="h-[600px]">
-                            <KanbanBoard />
-                        </div>
-                    </div>
-                </div>
+                {/* Client Component for Interactive View Switching */}
+                <DashboardClient leads={leads || []} />
             </div>
         </div>
     )

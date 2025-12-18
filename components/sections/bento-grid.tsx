@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useRef, useMemo, memo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Points, PointMaterial, Float } from "@react-three/drei";
 import * as THREE from "three";
-import { GlassCard } from "@/components/ui/glass-card";
 import {
     Zap, Globe, Cpu, Shield, Activity,
     Search, BarChart3, Workflow, CreditCard,
@@ -55,7 +54,7 @@ const NeuralVisual = memo(() => {
             })
         );
 
-        const connectionsList: { start: any, end: any, id: string }[] = [];
+        const connectionsList: { start: { id: string; x: number; y: number; layer: number }; end: { id: string; x: number; y: number; layer: number }; id: string }[] = [];
         nodesList.forEach(node => {
             if (node.layer < layers.length - 1) {
                 const nextLayerNodes = nodesList.filter(n => n.layer === node.layer + 1);
@@ -138,8 +137,8 @@ NeuralVisual.displayName = "NeuralVisual";
 
 // --- 3D Globe Components ---
 
-function GlobePoints(props: any) {
-    const ref = useRef<any>(null);
+function GlobePoints(props: Record<string, unknown>) {
+    const ref = useRef<THREE.Points>(null);
 
     // Generate random points on a sphere
     const [sphere] = useState(() => {
@@ -406,7 +405,6 @@ const PaymentsVisual = memo(() => (
 PaymentsVisual.displayName = "PaymentsVisual";
 
 // --- Data ---
-// FIX: Store Component References, not Instances, to allow props passing
 const bentoItems = [
     {
         id: 0,

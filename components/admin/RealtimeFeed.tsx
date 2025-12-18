@@ -9,7 +9,7 @@ type AuditEvent = {
     id: string
     created_at: string
     event_type: string
-    payload: any
+    payload: Record<string, unknown>
     lead_id: string
 }
 

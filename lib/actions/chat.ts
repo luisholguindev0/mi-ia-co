@@ -42,13 +42,14 @@ export async function sendManualMessage(leadId: string, content: string) {
     try {
         await sendWhatsAppMessage(lead.phone_number, content)
         console.log(`✅ Manual message sent to ${lead.phone_number}`)
-    } catch (whatsappError: any) {
+    } catch (whatsappError: unknown) {
+        const errorMessage = whatsappError instanceof Error ? whatsappError.message : String(whatsappError);
         console.error('WhatsApp send failed:', whatsappError)
         // Still log the attempt
         await supabase.from('audit_logs').insert({
             lead_id: leadId,
             event_type: 'whatsapp_send_failed',
-            payload: { content, error: whatsappError.message },
+            payload: { content, error: errorMessage },
             latency_ms: 0,
         })
         return { error: 'WhatsApp send failed' }

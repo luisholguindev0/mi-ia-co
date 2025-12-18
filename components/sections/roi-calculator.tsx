@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { GlassCard } from "@/components/ui/glass-card";
-import { DollarSign, TrendingUp, Users } from "lucide-react";
+import { DollarSign, TrendingUp } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useIndustryStore } from "@/hooks/use-industry-store";

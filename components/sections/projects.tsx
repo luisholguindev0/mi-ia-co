@@ -150,7 +150,7 @@ export function Projects() {
                         >
                             <GlassCard className="p-8 mb-8">
                                 <span className="text-xs font-mono text-green-400 uppercase tracking-widest mb-4 block">
-                                    Caso de Éxito 0{i + 1} // {project.industry.toUpperCase()}
+                                    Caso de Éxito 0{i + 1} {"//"} {project.industry.toUpperCase()}
                                 </span>
                                 <p className="text-xl text-white/80 leading-relaxed mb-8">
                                     {project.description}

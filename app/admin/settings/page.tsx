@@ -1,6 +1,5 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import { revalidatePath } from 'next/cache';
 import { supabaseAdmin } from '@/lib/db';
 import SettingsForm from './SettingsForm';
 
@@ -19,7 +18,7 @@ export default async function SettingsPage() {
         .order('key');
 
     // Transform to a more usable format
-    const settingsMap: Record<string, any> = {};
+    const settingsMap: Record<string, { value: unknown; description: string; updatedAt: string }> = {};
     for (const setting of settings || []) {
         settingsMap[setting.key] = {
             value: setting.value,

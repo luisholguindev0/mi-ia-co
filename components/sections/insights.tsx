@@ -40,7 +40,7 @@ export function Insights() {
     const sliderRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        let ctx = gsap.context(() => {
+        const ctx = gsap.context(() => {
             if (!process.env.NEXT_PUBLIC_DISABLE_ANIMATIONS) {
                 const totalWidth = sliderRef.current?.scrollWidth || 0;
                 const viewportWidth = window.innerWidth;

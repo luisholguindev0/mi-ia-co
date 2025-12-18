@@ -65,17 +65,10 @@ const FluidGridMaterial = shaderMaterial(
 
 extend({ FluidGridMaterial });
 
-// Add types for the custom shader material
-declare global {
-    namespace JSX {
-        interface IntrinsicElements {
-            fluidGridMaterial: any;
-        }
-    }
-}
+
 
 function GridMesh() {
-    const materialRef = useRef<any>(null);
+    const materialRef = useRef<THREE.ShaderMaterial & { uTime: number; uMouse: THREE.Vector2 }>(null);
     const mouse = useMousePosition();
     const { viewport } = useThree();
 
@@ -132,8 +125,8 @@ function GridMesh() {
                     args={[particles, 3]}
                 />
             </bufferGeometry>
-            {/* @ts-ignore */}
-            <fluidGridMaterial ref={materialRef} transparent blinking />
+            {/* @ts-expect-error custom element */}
+            <fluidGridMaterial ref={materialRef} />
         </points>
     );
 }

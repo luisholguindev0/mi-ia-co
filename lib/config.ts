@@ -128,7 +128,7 @@ const PII_PATTERNS = [
 export function sanitizeInput(text: string): string {
     if (!text) return '';
 
-    let sanitized = text
+    const sanitized = text
         // Remove null bytes
         .replace(/\0/g, '')
         // Normalize whitespace

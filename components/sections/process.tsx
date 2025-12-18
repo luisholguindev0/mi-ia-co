@@ -2,7 +2,6 @@
 
 import { useRef } from "react";
 import { motion, useScroll, useTransform, MotionValue } from "framer-motion";
-import { GlassCard } from "@/components/ui/glass-card";
 import { Search, PenTool, Code2, Rocket } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSfx } from "@/hooks/use-sfx";
