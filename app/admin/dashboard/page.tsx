@@ -1,6 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import { cn } from '@/lib/utils'
 
 // Force dynamic behavior so the server client logic (cookies) runs on every request
 // or we can just rely on middleware protection.

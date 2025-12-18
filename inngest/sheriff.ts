@@ -27,7 +27,7 @@ export const theSheriff = inngest.createFunction(
             if (fetchError) throw new Error(fetchError.message);
 
             if (staleAppointments && staleAppointments.length > 0) {
-                const ids = staleAppointments.map(a => a.id);
+                const ids = staleAppointments.map((a: { id: string }) => a.id);
                 // Bulk update
                 const { error: updateError } = await supabaseAdmin
                     .from("appointments")

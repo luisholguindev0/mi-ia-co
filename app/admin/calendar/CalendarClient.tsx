@@ -2,11 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, startOfMonth, endOfMonth, isSameMonth, isSameDay, addDays, getHours, setHours, startOfDay } from 'date-fns';
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, startOfMonth, endOfMonth, isSameDay, addDays, getHours, setHours, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, Lock, User, CheckCircle, XCircle } from 'lucide-react';
-import { getBusinessSettings } from '@/lib/settings'; // We might need to fetch this or pass it down
+import { ChevronLeft, ChevronRight, Lock, User, CheckCircle } from 'lucide-react';
+import { useCallback } from 'react';
+// getBusinessSettings removed as it was unused
+
+interface LeadProfile {
+    name?: string;
+    industry?: string;
+    location?: string;
+    [key: string]: unknown;
+}
 
 interface Appointment {
     id: string;
@@ -14,18 +22,28 @@ interface Appointment {
     end_time: string;
     status: 'unconfirmed' | 'confirmed' | 'cancelled' | 'completed' | 'blocked';
     leads?: {
-        profile: any;
+        profile: LeadProfile | null;
         phone_number: string;
     } | null;
     notes?: string;
 }
 
-export function CalendarClient({ initialAppointments }: { initialAppointments: any[] }) {
+export function CalendarClient({ initialAppointments }: { initialAppointments: Appointment[] }) {
     const supabase = createClient();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
     const [view, setView] = useState<'month' | 'week'>('week');
-    const [hoveredSlot, setHoveredSlot] = useState<string | null>(null);
+    // hoveredSlot removed as it was unused
+
+    const refreshAppointments = useCallback(async () => {
+        const { data } = await supabase
+            .from('appointments')
+            .select(`*, leads(profile, phone_number)`)
+            .gte('start_time', startOfMonth(currentDate).toISOString())
+            .lte('end_time', endOfMonth(currentDate).toISOString());
+
+        if (data) setAppointments(data as Appointment[]);
+    }, [supabase, currentDate]);
 
     // Subscribe to realtime changes
     useEffect(() => {
@@ -36,8 +54,6 @@ export function CalendarClient({ initialAppointments }: { initialAppointments: a
                 { event: '*', schema: 'public', table: 'appointments' },
                 (payload) => {
                     console.log('Calendar update:', payload);
-                    // Optimized refresh: In a real app we'd merge the payload, 
-                    // but fetching fresh is safer for consistency for now.
                     refreshAppointments();
                 }
             )
@@ -46,17 +62,7 @@ export function CalendarClient({ initialAppointments }: { initialAppointments: a
         return () => {
             supabase.removeChannel(channel);
         };
-    }, []);
-
-    const refreshAppointments = async () => {
-        const { data } = await supabase
-            .from('appointments')
-            .select(`*, leads(profile, phone_number)`)
-            .gte('start_time', startOfMonth(currentDate).toISOString())
-            .lte('end_time', endOfMonth(currentDate).toISOString());
-
-        if (data) setAppointments(data as any);
-    };
+    }, [supabase, refreshAppointments]);
 
     // Navigation
     const nextPeriod = () => setCurrentDate(addDays(currentDate, view === 'week' ? 7 : 30));
@@ -71,7 +77,6 @@ export function CalendarClient({ initialAppointments }: { initialAppointments: a
 
     const getAppointmentForSlot = (day: Date, hour: number) => {
         // Simple overlap check
-        const slotStart = setHours(startOfDay(day), hour);
         return appointments.find(apt => {
             const aptStart = new Date(apt.start_time);
             return isSameDay(aptStart, day) && getHours(aptStart) === hour && apt.status !== 'cancelled';
@@ -190,7 +195,7 @@ export function CalendarClient({ initialAppointments }: { initialAppointments: a
                                                 ) : (
                                                     <div className="space-y-1">
                                                         <div className="font-semibold text-white/90">
-                                                            {apt.leads?.profile?.name?.split(' ')[0] || 'Lead'}
+                                                            {((apt.leads?.profile as LeadProfile)?.name)?.split(' ')[0] || 'Lead'}
                                                         </div>
                                                         <div className="flex items-center gap-1 opacity-70">
                                                             {isConfirmed ? <CheckCircle className="w-3 h-3 text-emerald-400" /> : <User className="w-3 h-3 text-amber-400" />}

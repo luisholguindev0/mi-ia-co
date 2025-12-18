@@ -8,9 +8,9 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 // We add a check to prevent crash during build/test if env is missing
 export const supabaseAdmin = supabaseUrl && supabaseServiceKey
     ? createClient(supabaseUrl, supabaseServiceKey)
-    : {} as any;
+    : null as unknown as ReturnType<typeof createClient>;
 
 // Client-side client (uses anon key - respects RLS)
 export const supabase = supabaseUrl && supabaseAnonKey
     ? createClient(supabaseUrl, supabaseAnonKey)
-    : {} as any;
+    : null as unknown as ReturnType<typeof createClient>;
