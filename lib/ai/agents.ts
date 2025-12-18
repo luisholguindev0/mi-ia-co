@@ -16,6 +16,7 @@ import {
 import { retrieveContext } from './rag';
 import { agentResponseSchema, type AgentResponse } from './tools';
 import { supabaseAdmin } from '@/lib/db';
+import { formatBusinessHoursForAI } from '@/lib/settings';
 
 // Initialize DeepSeek clients
 const deepseek = createDeepSeek({
@@ -47,13 +48,17 @@ export async function runDoctorAgent(ctx: AgentContext): Promise<AgentResponse> 
     try {
         // Step 1: Retrieve relevant context from knowledge_base
         const tRag = Date.now();
-        const ragContext = await retrieveContext(ctx.userMessage);
+        const [ragContext, businessHoursText] = await Promise.all([
+            retrieveContext(ctx.userMessage),
+            formatBusinessHoursForAI(),
+        ]);
         console.log(`⏱️ RAG Retrieval Duration: ${Date.now() - tRag}ms`);
 
-        // Step 2: Build prompt with retrieved context AND conversation history
+        // Step 2: Build prompt with retrieved context, conversation history, AND business hours
         const systemPrompt = DOCTOR_SYSTEM_PROMPT
             .replace('{{RETRIEVED_CONTEXT}}', ragContext)
             .replace('{{CONVERSATION_HISTORY}}', ctx.conversationHistory)
+            .replace('{{BUSINESS_HOURS}}', businessHoursText)
             .replace('{{USER_MESSAGE}}', ctx.userMessage);
 
         // Step 3: Generate structured response using R1

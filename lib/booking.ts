@@ -1,16 +1,11 @@
 /**
  * lib/booking.ts
  * Pure booking logic for appointment management
- * Business hours are configurable via environment variables
+ * Business hours are now loaded dynamically from database
  */
 
 import { supabaseAdmin } from '@/lib/db';
-import { BUSINESS_CONFIG } from '@/lib/config';
-
-// Use centralized config for business hours
-const BUSINESS_HOURS = BUSINESS_CONFIG.hours;
-const WORKING_DAYS = BUSINESS_CONFIG.workingDays;
-const SLOT_DURATION = BUSINESS_CONFIG.slotDuration;
+import { getBusinessSettings, getDaySchedule, type BusinessSettings } from '@/lib/settings';
 
 interface TimeSlot {
     date: string;
@@ -29,16 +24,21 @@ interface Appointment {
 
 /**
  * Get available time slots for a given date
- * Checks against existing appointments in the database
+ * Now uses dynamic business hours from database
  */
 export async function getAvailableSlots(date: string): Promise<TimeSlot[]> {
     const targetDate = new Date(date);
-    const dayOfWeek = targetDate.getUTCDay();
+    const settings = await getBusinessSettings();
+    const daySchedule = await getDaySchedule(targetDate);
 
     // Check if it's a working day
-    if (!WORKING_DAYS.includes(dayOfWeek === 0 ? 7 : dayOfWeek)) {
-        return []; // Weekend or non-working day
+    if (!daySchedule.enabled) {
+        return []; // Day is disabled
     }
+
+    // Parse hours from schedule
+    const startHour = parseInt(daySchedule.start.split(':')[0]);
+    const endHour = parseInt(daySchedule.end.split(':')[0]);
 
     // Get existing appointments for this date
     const startOfDay = `${date}T00:00:00-05:00`;
@@ -56,11 +56,14 @@ export async function getAvailableSlots(date: string): Promise<TimeSlot[]> {
         return [];
     }
 
-    // Generate all possible slots
+    // Generate all possible slots based on dynamic hours
     const slots: TimeSlot[] = [];
-    for (let hour = BUSINESS_HOURS.start; hour < BUSINESS_HOURS.end; hour++) {
-        const startTime = `${hour.toString().padStart(2, '0')}:00`;
-        const endTime = `${(hour + 1).toString().padStart(2, '0')}:00`;
+    const slotDuration = settings.slotDuration / 60; // Convert to hours
+
+    for (let hour = startHour; hour < endHour; hour += slotDuration) {
+        const startTime = `${String(Math.floor(hour)).padStart(2, '0')}:${String((hour % 1) * 60).padStart(2, '0').slice(0, 2) || '00'}`;
+        const endHourCalc = hour + slotDuration;
+        const endTime = `${String(Math.floor(endHourCalc)).padStart(2, '0')}:${String((endHourCalc % 1) * 60).padStart(2, '0').slice(0, 2) || '00'}`;
 
         // Check if slot conflicts with existing appointments
         const slotStart = new Date(`${date}T${startTime}:00-05:00`);
@@ -93,31 +96,47 @@ export async function bookSlot(
     startTime: string,
     notes?: string
 ): Promise<Appointment | null> {
+    const settings = await getBusinessSettings();
+    const daySchedule = await getDaySchedule(new Date(date));
+
+    // Guard: Day must be enabled
+    if (!daySchedule.enabled) {
+        console.error(`Cannot book: ${date} is not a working day`);
+        return null;
+    }
+
     // Parse and validate times
     const startHour = parseInt(startTime.split(':')[0]);
-    const endHour = startHour + 1;
+    const slotDurationHours = settings.slotDuration / 60;
+    const endHour = startHour + slotDurationHours;
+
+    const scheduleStartHour = parseInt(daySchedule.start.split(':')[0]);
+    const scheduleEndHour = parseInt(daySchedule.end.split(':')[0]);
 
     // Guard: End time must be within business hours
-    if (endHour > BUSINESS_HOURS.end) {
-        console.error(`Cannot book slot: end time ${endHour}:00 exceeds business hours (${BUSINESS_HOURS.end}:00)`);
+    if (endHour > scheduleEndHour) {
+        console.error(`Cannot book slot: end time ${endHour}:00 exceeds business hours (${scheduleEndHour}:00)`);
         return null;
     }
 
     // Guard: Start time must be within business hours
-    if (startHour < BUSINESS_HOURS.start) {
-        console.error(`Cannot book slot: start time ${startHour}:00 is before business hours (${BUSINESS_HOURS.start}:00)`);
+    if (startHour < scheduleStartHour) {
+        console.error(`Cannot book slot: start time ${startHour}:00 is before business hours (${scheduleStartHour}:00)`);
         return null;
     }
 
     // Guard: Cannot book in the past
     const bookingDate = new Date(`${date}T${startTime}:00-05:00`);
-    if (bookingDate < new Date()) {
-        console.error(`Cannot book slot in the past: ${date} ${startTime}`);
+    const now = new Date();
+    const bufferMs = settings.bookingBuffer * 60 * 60 * 1000;
+
+    if (bookingDate.getTime() < now.getTime() + bufferMs) {
+        console.error(`Cannot book slot: must be at least ${settings.bookingBuffer} hours in advance`);
         return null;
     }
 
     const startDateTime = `${date}T${startTime}:00-05:00`;
-    const endDateTime = `${date}T${String(endHour).padStart(2, '0')}:00:00-05:00`;
+    const endDateTime = `${date}T${String(Math.floor(endHour)).padStart(2, '0')}:00:00-05:00`;
 
     // Use upsert with conflict detection (leverages the no_overlap constraint)
     const { data, error } = await supabaseAdmin

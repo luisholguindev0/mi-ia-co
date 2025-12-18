@@ -80,6 +80,32 @@
 
 ---
 
+## Security Hardening (2025-12-18 11:15 EST)
+
+### 9. Centralized Configuration (`lib/config.ts`)
+- **Environment Validation**: Checks all required env vars on startup
+- **Input Sanitization**: XSS prevention, null byte removal
+- **PII Detection**: Detects credit cards, IDs, logs redacted version
+- **Rate Limiting**: In-memory 10 msg/min per lead (configurable)
+
+### 10. Bug Fixes Applied
+- Empty message guard (skip AI for media/empty)
+- AI response truncation (max 4000 chars)
+- Booking time validation (within hours, not in past)
+- WhatsApp token validation (fail fast on missing)
+
+### 11. Configurable Settings (via ENV)
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BUSINESS_HOURS_START` | 9 | Start of business hours |
+| `BUSINESS_HOURS_END` | 17 | End of business hours |
+| `WORKING_DAYS` | 1,2,3,4,5 | Mon-Fri |
+| `MAX_HISTORY_MESSAGES` | 20 | AI context window |
+| `RAG_SIMILARITY_THRESHOLD` | 0.6 | Vector search threshold |
+| `RATE_LIMIT_MESSAGES` | 10 | Messages per minute |
+
+---
+
 # MEMORY.md - Wrap Up: Week 3 Complete (Hardening)
 
 **Date**: 2025-12-18 08:30 EST
