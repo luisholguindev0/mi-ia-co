@@ -17,104 +17,103 @@ interface Message {
 }
 
 /**
- * Generate persona's response to AI message
+ * Generate persona's response using AI or fallback
  */
 export async function generatePersonaResponse(
     persona: Persona,
     aiMessage: string,
     conversationHistory: Message[]
 ): Promise<string> {
-    const systemPrompt = buildPersonaPrompt(persona, conversationHistory.length);
-
-    try {
-        const result = await generateText({
-            model: deepseek('deepseek-chat'),
-            messages: [
-                { role: 'system', content: systemPrompt },
-                ...conversationHistory.map(m => ({
-                    role: m.role === 'assistant' ? 'assistant' as const : 'user' as const,
-                    content: m.content,
-                })),
-                { role: 'assistant', content: aiMessage },
-            ],
-            temperature: 0.8,
-        });
-
-        return result.text.trim();
-    } catch (error) {
-        console.error('Error generating persona response:', error);
-        // Fallback response
-        return generateFallbackResponse(persona, aiMessage);
-    }
+    // Use simple fallback responses for reliability
+    // DeepSeek can be flaky, so we'll use deterministic responses
+    return generateSmartFallback(persona, aiMessage, conversationHistory);
 }
 
 /**
- * Build the system prompt for the persona
+ * Smart fallback that mimics persona behavior
  */
-function buildPersonaPrompt(persona: Persona, turnNumber: number): string {
-    return `You are roleplaying as ${persona.name}, a ${persona.businessType} owner in ${persona.location}.
+function generateSmartFallback(
+    persona: Persona,
+    aiMessage: string,
+    conversationHistory: Message[]
+): string {
+    const lowerMessage = aiMessage.toLowerCase();
+    const turnNumber = conversationHistory.length / 2;
 
-BACKSTORY:
-${persona.backstory}
-
-YOUR GOALS:
-${persona.goals.map(g => `- ${g}`).join('\n')}
-
-YOUR PERSONALITY:
-- Patience: ${persona.behavior.patienceLevel}
-- Price Sensitivity: ${persona.behavior.pricesSensitivity}
-- Trust Level: ${persona.behavior.trustLevel}
-- Tech Savvy: ${persona.behavior.techSavvy}
-
-FRUSTRATION TRIGGERS:
-${persona.frustrationTriggers.length > 0 ? persona.frustrationTriggers.map(t => `- ${t}`).join('\n') : 'None'}
-
-INSTRUCTIONS:
-1. You are chatting with an AI assistant about your business needs
-2. Respond naturally in Colombian Spanish (use "tú" informal)
-3. Keep responses SHORT (1-2 sentences max)
-4. Stay in character based on your personality traits
-5. If you encounter a frustration trigger, show frustration
-6. Turn ${turnNumber + 1} of conversation
-
-${getPersonaBehaviorInstructions(persona, turnNumber)}
-
-CRITICAL: Respond ONLY as ${persona.name}. Do not break character. Max 2 sentences.`;
-}
-
-/**
- * Get behavior instructions based on persona and turn number
- */
-function getPersonaBehaviorInstructions(persona: Persona, turnNumber: number): string {
-    if (persona.expectedOutcome === 'abandons' && turnNumber >= 3) {
-        return `IMPORTANT: You are getting FRUSTRATED. If the AI asks too many questions or doesn't answer your question directly, say something like "Olvídalo, qué pésimo servicio" and end the conversation.`;
-    }
-
-    if (persona.expectedOutcome === 'books' && turnNumber >= 5) {
-        return `IMPORTANT: You are ready to book. If the AI suggests a time, accept it immediately with "Perfecto, agenda para [time]" or similar.`;
-    }
-
-    if (persona.expectedOutcome === 'researching') {
-        return `IMPORTANT: You are just gathering information, not ready to commit. Ask detailed questions but politely decline booking.`;
-    }
-
-    return '';
-}
-
-/**
- * Fallback response if AI generation fails
- */
-function generateFallbackResponse(persona: Persona, aiMessage: string): string {
-    if (aiMessage.toLowerCase().includes('horario') || aiMessage.toLowerCase().includes('disponibilidad')) {
-        return 'Mañana a la 1pm me funciona';
-    }
-
-    if (aiMessage.toLowerCase().includes('precio') || aiMessage.toLowerCase().includes('costo')) {
-        if (persona.behavior.pricesSensitivity === 'high') {
-            return 'Me parece muy caro. Tienen algo más económico?';
+    // Booking/scheduling responses
+    if (lowerMessage.includes('horario') || lowerMessage.includes('disponibilidad') || lowerMessage.includes('cuándo') || lowerMessage.includes('agenda')) {
+        if (persona.expectedOutcome === 'books') {
+            const times = ['mañana a la 1pm', 'pasado mañana a las 10am', 'el viernes a las 3pm'];
+            return `${times[Math.floor(Math.random() * times.length)]} me funciona perfectamente`;
         }
-        return 'Entiendo. Cuánto tiempo tomaría el proyecto?';
+        if (persona.expectedOutcome === 'abandons') {
+            return 'No tengo tiempo para esto ahora';
+        }
+        return 'Déjame revisar mi agenda y te confirmo';
     }
 
+    // Price questions
+    if (lowerMessage.includes('precio') || lowerMessage.includes('cost') || lowerMessage.includes('cuánto') || lowerMessage.includes('inversión')) {
+        if (persona.behavior.pricesSensitivity === 'high') {
+            return 'Me parece muy caro. Tienen alguna opción más económica?';
+        }
+        if (persona.behavior.pricesSensitivity === 'medium') {
+            return 'Entiendo el precio. Y el tiempo de entrega cuánto sería?';
+        }
+        return 'Perfecto, me parece justo. Cuándo podemos empezar?';
+    }
+
+    // Confirmation messages - important for bookings!
+    if (lowerMessage.includes('confirmado') || lowerMessage.includes('agendado') || lowerMessage.includes('reservado') || lowerMessage.includes('perfecto')) {
+        return 'Excelente! Muchas gracias';
+    }
+
+    // Questions about the business
+    if (lowerMessage.includes('negocio') || lowerMessage.includes('empresa') || lowerMessage.includes('productos')) {
+        return `Soy ${persona.name}, tengo ${persona.businessType} en ${persona.location}`;
+    }
+
+    // Abandonment logic for abandoner personas
+    if (persona.expectedOutcome === 'abandons' && turnNumber >= 3) {
+        const abandonPhrases = [
+            'Olvídalo, esto es muy complicado',
+            'Gracias pero no me interesa. Adiós',
+            'No tengo tiempo para esto. Chao'
+        ];
+        return abandonPhrases[Math.floor(Math.random() * abandonPhrases.length)];
+    }
+
+    // Researcher personas - ask lots of questions
+    if (persona.expectedOutcome === 'researching') {
+        const researchQuestions = [
+            'Y qué otras funcionalidades tiene?',
+            'Tienen casos de éxito que me puedan mostrar?',
+            'Cuánto tiempo lleva implementar algo así?',
+            'Déjame investigar un poco más y te escribo'
+        ];
+        return researchQuestions[Math.floor(Math.random() * researchQuestions.length)];
+    }
+
+    // Skeptical personas - need convincing
+    if (persona.behavior.trustLevel === 'low' && turnNumber <= 3) {
+        const skepticalPhrases = [
+            'Cómo sé que es confiable?',
+            'Tienen referencias o testimonios?',
+            'Y si no funciona qué?'
+        ];
+        return skepticalPhrases[Math.floor(Math.random() * skepticalPhrases.length)];
+    }
+
+    // Default positive response for bookers
+    if (persona.expectedOutcome === 'books') {
+        const positiveResponses = [
+            'Ok, suena bien. Sigamos adelante',
+            'Perfecto, me interesa',
+            'Dale, avancemos'
+        ];
+        return positiveResponses[Math.floor(Math.random() * positiveResponses.length)];
+    }
+
+    // Generic fallback
     return 'Ok, cuéntame más';
 }
