@@ -69,7 +69,6 @@ export class PersonaEngine {
                     { role: 'user', content: `AI's latest message: "${aiMessage}"\n\nRespond naturally as ${this.state.personality.name}:` },
                 ],
                 temperature: 0.9, // High creativity to avoid repetition
-                maxSteps: 1, // Single generation step
             });
 
             const response = result.text.trim();
