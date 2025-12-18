@@ -88,12 +88,38 @@ export async function executeToolCalls(
                 }
 
                 case 'checkAvailability': {
-                    const args = call.args as { date: string };
-                    const slots = await getAvailableSlots(args.date);
-                    const availableSlots = slots.filter(s => s.available);
+                    const args = call.args as { date?: string };
 
-                    console.log(`✅ Found ${availableSlots.length} available slots for ${args.date}`);
-                    results.push({ tool: 'checkAvailability', success: true, result: availableSlots });
+                    if (!args.date) {
+                        console.warn('⚠️ checkAvailability called without date. Asking user for date.');
+                        results.push({
+                            tool: 'checkAvailability',
+                            success: false,
+                            error: 'Por favor, proporciona una fecha específica (YYYY-MM-DD) para verificar la disponibilidad.'
+                        });
+                        break;
+                    }
+
+                    // Validate date format
+                    if (isNaN(new Date(args.date).getTime())) {
+                        results.push({
+                            tool: 'checkAvailability',
+                            success: false,
+                            error: 'Formato de fecha inválido. Usa YYYY-MM-DD.'
+                        });
+                        break;
+                    }
+
+                    try {
+                        const slots = await getAvailableSlots(args.date);
+                        const availableSlots = slots.filter(s => s.available);
+
+                        console.log(`✅ Found ${availableSlots.length} available slots for ${args.date}`);
+                        results.push({ tool: 'checkAvailability', success: true, result: availableSlots });
+                    } catch (err) {
+                        console.error('Error in getAvailableSlots:', err);
+                        results.push({ tool: 'checkAvailability', success: false, error: 'Error interno verificando disponibilidad.' });
+                    }
                     break;
                 }
 

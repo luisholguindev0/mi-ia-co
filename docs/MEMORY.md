@@ -484,4 +484,41 @@
 
 ### Note on Embeddings
 - `lib/ai/rag.ts` uses OpenAI's `text-embedding-3-small` for embeddings
-- **✅ OPENAI_API_KEY configured for vector search**
+488: ✅ OPENAI_API_KEY configured for vector search
+
+---
+
+# MEMORY.md - Wrap Up: Internal Booking System (Proprietary)
+**Date**: 2025-12-18 14:05 EST
+**Status**: ✅ Calendar Verification | ✅ Logic Hardened
+
+## Accomplished
+### 30. Proprietary Admin Calendar ("God Mode" Booking)
+- **Objective**: Eliminate Google Calendar dependency. Give admin full control (Click-to-Block).
+- **Solution**:
+    - **UI**: Built `/admin/calendar` with a futuristic week/month grid using `date-fns`.
+    - **Logic**: Implemented "Click-to-Block" which inserts `status: 'blocked'` appointments.
+    - **Realtime**: Used Supabase Subscription (`appointments` table) so the UI updates instantly when AI books or Admin blocks.
+    - **Hardening**: Updated `appointments` check constraint to allow `blocked` status.
+
+### 31. AI Logic Hardening (The Firewall)
+- **Problem**: `checkAvailability` crashed on vague input (`TypeError`). AI didn't strictly respect blocks.
+- **Solution**:
+    - **Validation**: Added input validation layer to `executor.ts` (prevents crashing).
+    - **Prompt Engineering**: Updated `CLOSER_SYSTEM_PROMPT` with strict negotiation rules ("Ask date if vague", "Respect blocked slots").
+    - **Testing**: Created `scripts/test-tools-harden.ts` to verify the AI handles invalid dates gracefully.
+
+### 32. Real-Time Settings Optimization
+- **Problem**: 5-minute cache delay meant settings changes weren't instant for the AI.
+- **Solution**: Lowered `CACHE_TTL_MS` to 30 seconds. Now, disabling a day in Settings takes effect almost immediately.
+
+## Files Modified/Created
+| File | Impact |
+|------|--------|
+| `app/admin/calendar/page.tsx` | **NEW**: Server-side calendar page container. |
+| `app/admin/calendar/CalendarClient.tsx` | **NEW**: Client-side grid, blocking logic, realtime. |
+| `components/ui/dock.tsx` | Added Calendar icon to Admin Dock. |
+| `lib/booking.ts` | Updated slot generation to respect blocks. |
+| `lib/settings.ts` | Reduced cache TTL to 30s. |
+| `scripts/test-tools-harden.ts` | **NEW**: Unit test for AI tool robustness. |
+

@@ -8,6 +8,7 @@ import {
     HelpCircle,
     Layers,
     LayoutDashboard,
+    CalendarDays,
     BarChart3,
     Settings2,
     LogOut,
@@ -28,6 +29,7 @@ const publicItems = [
 
 const adminItems = [
     { icon: LayoutDashboard, label: "Mission Control", href: "/admin/dashboard" },
+    { icon: CalendarDays, label: "Calendar", href: "/admin/calendar" },
     { icon: BarChart3, label: "Analytics", href: "/admin/analytics" },
     { icon: Settings2, label: "Configuración", href: "/admin/settings" },
 ];

@@ -7,8 +7,8 @@
 
 import { supabaseAdmin } from '@/lib/db';
 
-// Cache settings for 5 minutes to avoid DB hits on every request
-const CACHE_TTL_MS = 5 * 60 * 1000;
+// Cache settings for 30 seconds to balance DB load and real-time responsiveness
+const CACHE_TTL_MS = 30 * 1000;
 const settingsCache: Map<string, { value: unknown; expiresAt: number }> = new Map();
 
 // Type definitions for settings
