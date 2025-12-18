@@ -68,9 +68,14 @@ export const processWhatsAppMessage = inngest.createFunction(
             const phoneNumber = from;
 
             // ═══════════════════════════════════════════════════════════════
-            // GUARD: Rate limiting
+            // GUARD: Rate limiting (inside step for idempotency)
             // ═══════════════════════════════════════════════════════════════
-            if (isRateLimited(phoneNumber)) {
+            const rateLimitResult = await step.run(`rate-limit-${messageId}`, async () => {
+                const limited = isRateLimited(phoneNumber);
+                return { limited };
+            });
+
+            if (rateLimitResult.limited) {
                 console.log(`🚫 Rate limited: ${phoneNumber}`);
                 return { success: false, rateLimited: true, phoneNumber };
             }
