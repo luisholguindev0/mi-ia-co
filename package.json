@@ -6,11 +6,12 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "next lint",
     "db:push": "dotenvx run -- supabase db push",
     "db:migration:new": "dotenvx run -- supabase migration new",
     "inngest:dev": "dotenvx run -- npx inngest-cli@latest dev -u http://localhost:3000/api/inngest",
-    "test:e2e": "npx tsx scripts/test-e2e-personas.ts"
+    "test:e2e": "npx tsx scripts/test-e2e-personas.ts",
+    "test:intelligent": "npx tsx scripts/run-intelligent-tests.ts"
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^1.0.32",
