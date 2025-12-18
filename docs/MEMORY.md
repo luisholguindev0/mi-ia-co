@@ -106,6 +106,32 @@
 
 ---
 
+## Dynamic Business Hours (2025-12-18 11:25 EST)
+
+### 12. Database-Driven Configuration
+- **New Table**: `business_settings` (key-value JSONB pattern)
+- **Default Hours**: Mon-Fri 9-17, Sat-Sun disabled
+- **Configurable**: slot_duration, booking_buffer, max_daily_appointments
+
+### 13. Settings Service (`lib/settings.ts`)
+- `getBusinessSettings()` - Cached retrieval (5 min TTL)
+- `formatBusinessHoursForAI()` - Prompt injection helper
+- `getDaySchedule()` - Get schedule for specific date
+- `isWithinBusinessHours()` - Validate availability
+
+### 14. Admin Settings Page (`/admin/settings`)
+- Visual day-by-day editor with checkboxes
+- Time pickers for start/end
+- Slot duration, buffer, max daily dropdowns
+- Real-time save with cache invalidation
+
+### 15. AI Integration
+- Prompts now include `<business_hours>` section
+- AI knows availability before offering times
+- Uses `checkAvailability` tool with dynamic hours
+
+---
+
 # MEMORY.md - Wrap Up: Week 3 Complete (Hardening)
 
 **Date**: 2025-12-18 08:30 EST
