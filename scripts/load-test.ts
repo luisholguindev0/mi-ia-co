@@ -1,4 +1,9 @@
 import crypto from 'crypto';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load env from .env.local
+dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
 const TOTAL_REQUESTS = 50;
 const CONCURRENCY = 10;

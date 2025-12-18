@@ -19,6 +19,42 @@
 
 ---
 
+# MEMORY.md - Wrap Up: Pre-Production Stress Testing & Security Validation
+**Date**: 2025-12-18 13:25 EST
+**Status**: ✅ Production Verified | ✅ Security Hardened | ✅ Database Cleaned
+
+## Accomplished
+### 27. Pre-Production Stress & Security Testing
+- **Objective**: Validate the app's stability and security in the live Vercel environment before a soft launch.
+- **Testing Infrastructure**:
+  - Updated `scripts/red-team.ts` and `scripts/load-test.ts` to support dynamic targets via `TEST_TARGET_URL`.
+  - Implemented **HMAC SHA-256 signing** in testing scripts to bypass production security gates (validating that the gateway correctly rejects unsigned traffic).
+- **Results**:
+  - **Load Test**: 100% success rate on 50 concurrent requests. Hand-off latency averaged **~426ms**.
+  - **Security (Red Teaming)**: AI successfully resisted prompt injections and PII extraction attempts.
+  - **Cold Start**: Verified stable response times after initial Vercel function activation.
+- **Documentation**: Created `TESTING_PLAN.md` for future regression testing.
+
+### 28. Environment Configuration
+- Identified requirement for `NEXT_PUBLIC_APP_URL` in Vercel to ensure consistent link generation and redirect logic.
+- Provided user with clear instructions for `.env.local` and Vercel environment variable settings.
+
+### 29. Database Purge for Clean Start
+- **Action**: Performed a full cleanup of `leads`, `appointments`, and `audit_logs` tables.
+- **Reason**: Removed all synthetic test data (50+ load test users and adversarial logs) to prepare the environment for a real "manual depuration" session.
+- **Verification**: Verified via SQL that sensitive tables are now at zero state.
+
+## Files Modified/Created
+| File | Impact |
+|------|--------|
+| `scripts/load-test.ts` | Added HMAC signing + dynamic target support. |
+| `scripts/red-team.ts` | Added HMAC signing + dynamic target support. |
+| `docs/TESTING_PLAN.md` | **NEW**: Comprehensive pre-prod test checklist. |
+| `DB SQL` | Purged all test-related records. |
+
+
+---
+
 # MEMORY.md - Wrap Up: Security Audit & RBAC Implementation
 
 ## Accomplished
