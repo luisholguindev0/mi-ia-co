@@ -21,7 +21,8 @@ const deepseek = createDeepSeek({
 });
 
 // Model selection per EDD spec
-const REASONING_MODEL = deepseek('deepseek-reasoner'); // R1 for diagnosis
+// CAUTION: Switched R1 -> V3 for production latency (40s -> 2s)
+const REASONING_MODEL = deepseek('deepseek-chat'); // Was 'deepseek-reasoner'
 const CONVERSATIONAL_MODEL = deepseek('deepseek-chat'); // V3 for chat
 
 interface AgentContext {
@@ -38,10 +39,13 @@ interface AgentContext {
  */
 export async function runDoctorAgent(ctx: AgentContext): Promise<AgentResponse> {
     const startTime = Date.now();
+    console.log(`⏱️ DoctorAgent Start: ${startTime}`);
 
     try {
         // Step 1: Retrieve relevant context from knowledge_base
+        const tRag = Date.now();
         const ragContext = await retrieveContext(ctx.userMessage);
+        console.log(`⏱️ RAG Retrieval Duration: ${Date.now() - tRag}ms`);
 
         // Step 2: Build prompt with retrieved context
         const systemPrompt = DOCTOR_SYSTEM_PROMPT
@@ -49,6 +53,7 @@ export async function runDoctorAgent(ctx: AgentContext): Promise<AgentResponse> 
             .replace('{{USER_MESSAGE}}', ctx.userMessage);
 
         // Step 3: Generate structured response using R1
+        const tGen = Date.now();
         const { object: response } = await generateObject({
             model: REASONING_MODEL,
             schema: agentResponseSchema,
@@ -56,6 +61,7 @@ export async function runDoctorAgent(ctx: AgentContext): Promise<AgentResponse> 
             prompt: ctx.userMessage,
             temperature: 0.7,
         });
+        console.log(`⏱️ AI Generation Duration (V3): ${Date.now() - tGen}ms`);
 
         // Step 4: Log to audit_logs
         await logAgentDecision({
