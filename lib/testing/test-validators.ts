@@ -41,9 +41,9 @@ export async function validateLeadCreated(phoneNumber: string): Promise<Validati
             passed: true,
             message: 'Lead created successfully',
             details: {
-                leadId: lead.id,
-                status: lead.status,
-                profile: lead.profile,
+                leadId: (lead as any).id,
+                status: (lead as any).status,
+                profile: (lead as any).profile,
             },
         };
     } catch (error) {
@@ -78,7 +78,7 @@ export async function validateMessagesSaved(
         const { data: messages, error } = await supabaseAdmin
             .from('messages')
             .select('*')
-            .eq('lead_id', lead.id)
+            .eq('lead_id', (lead as any).id)
             .order('created_at', { ascending: true });
 
         if (error) {
@@ -133,7 +133,7 @@ export async function validateAppointmentBooked(phoneNumber: string): Promise<Va
         const { data: appointments, error } = await supabaseAdmin
             .from('appointments')
             .select('*')
-            .eq('lead_id', lead.id);
+            .eq('lead_id', (lead as any).id);
 
         if (error) {
             return {

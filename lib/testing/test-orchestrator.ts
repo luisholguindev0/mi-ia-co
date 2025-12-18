@@ -204,7 +204,7 @@ async function getLatestAIResponse(phoneNumber: string): Promise<string | null> 
             return null;
         }
 
-        return messages[0].content;
+        return (messages[0] as { content: string }).content;
     } catch (error) {
         console.error(`   Exception in getLatestAIResponse:`, error);
         return null;
