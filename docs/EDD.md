@@ -15,7 +15,7 @@ The Stack (Bleeding Edge & Rationale)
 
 Core Framework: Next.js 16 (App Router, Turbopack).
 
-Why: Necesitamos Server Actions para la lógica de mutación y Route Handlers para los webhooks. El despliegue en Vercel Edge elimina la latencia de "cold start" de las funciones serverless tradicionales.
+Why: Necesitamos Server Actions para la lógica de mutación y Route Handlers para los webhooks. El despliegue en Vercel Edge elimina la latencia de "cold start" (Update: Migrated to `proxy.ts`, configured `turbopack.root`).
 
 Database & Vector Engine: Supabase (PostgreSQL 16 + pgvector + pg_cron).
 

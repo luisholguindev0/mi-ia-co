@@ -1,5 +1,36 @@
 # MEMORY.md - Wrap Up: Week 4 Complete (AI Brain Enhancement)
 
+**Date**: 2025-12-18 11:45 EST
+**Status**: ✅ Next.js 16 Migration & Maintenance Fixes
+
+## Accomplished (Session 11:30 - 11:45)
+
+### 16. Next.js 15+ searchParams Async Fix
+- **Problem**: `app/login/page.tsx` was crashing because it accessed `searchParams.error` synchronously.
+- **Solution**: Updated `LoginPage` to be an `async` component and `await searchParams` before accessing properties, adhering to the new Next.js 15+ requirement where `params` and `searchParams` are Promises.
+
+### 17. Middleware to Proxy Transition (Next.js 16)
+- **Warning**: Logs warned that `middleware.ts` is deprecated in favor of `proxy.ts`.
+- **Solution**: 
+  - Renamed `middleware.ts` to `proxy.ts`.
+  - Updated the exported function name to `proxy` and set it as the `default` export to satisfy the new Vercel/Next.js 16 proxy convention.
+
+### 18. Turbopack Workspace Root Fix
+- **Problem**: Warning: `Next.js inferred your workspace root, but it may not be correct` due to a stray `package-lock.json` in the user's home directory.
+- **Solution**: Explicitly set `turbopack.root` in `next.config.ts` to the project's absolute path.
+
+## Files Changed/Created
+
+| File | Type | Description |
+|------|------|-------------|
+| `app/login/page.tsx` | Modified | Await `searchParams` fix |
+| `proxy.ts` | **NEW** (Renamed) | Renamed from `middleware.ts` |
+| `next.config.ts` | Modified | Added `turbopack.root` config |
+
+---
+
+# MEMORY.md - Wrap Up: Week 4 Complete (AI Brain Enhancement)
+
 **Date**: 2025-12-18 10:56 EST
 **Status**: ✅ Week 4 COMPLETE
 
