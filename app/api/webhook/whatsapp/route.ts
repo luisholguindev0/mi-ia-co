@@ -27,8 +27,10 @@ export async function GET(req: NextRequest) {
 
 // POST: Message Reception
 export async function POST(req: NextRequest) {
+    console.log('📥 Webhook POST received');
     try {
         const bodyText = await req.text();
+        console.log('📦 Raw Body:', bodyText.substring(0, 200) + '...');
 
         // 1. Security Check (HMAC)
         // NOTE: Enabled only if WHATSAPP_APP_SECRET is present to allow easier local testing
