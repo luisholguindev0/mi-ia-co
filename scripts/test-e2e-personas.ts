@@ -4,7 +4,9 @@
  * Main E2E testing script - runs all persona tests
  */
 
-import 'dotenv/config';
+import { config } from 'dotenv';
+config({ path: '.env.local' });
+
 import { getAllPersonas } from '../lib/testing/personas';
 import { runPersonaConversation, type TestResult } from '../lib/testing/orchestrator';
 import { sleep } from '../lib/testing/webhook-simulator';
