@@ -1,0 +1,219 @@
+
+> mi-ia-colombia@0.1.0 test:e2e
+> npx tsx scripts/test-e2e-personas.ts
+
+🧪 E2E Persona Testing Framework
+==================================================
+
+📋 Loaded 10 personas
+
+🔄 Running 4 batches (3 parallel per batch)
+
+
+==================================================
+📦 Batch 1/4
+==================================================
+
+🤖 Starting conversation: Harry Gómez (happy-path-harry)
+   User: Hola, necesito una página web para mi tienda de ropa
+
+🤖 Starting conversation: Paula Rodríguez (price-conscious-paula)
+   User: Hola, cuánto cuesta una página web?
+
+🤖 Starting conversation: Esteban López (skeptical-steve)
+   User: He tenido malas experiencias con agencias. Por qué ustedes son diferentes?
+   ❌ Error: Cannot read properties of null (reading 'from')
+   ❌ Error: Cannot read properties of null (reading 'from')
+   ❌ Error: Cannot read properties of null (reading 'from')
+
+📊 Batch Results:
+   ❌ Harry Gómez (1 turns, 9.2s)
+      ⚠️  leadCreated: Not validated due to error
+      ⚠️  messagesSaved: Not validated due to error
+      ⚠️  profileUpdated: Not validated due to error
+   ❌ Paula Rodríguez (1 turns, 9.6s)
+      ⚠️  leadCreated: Not validated due to error
+      ⚠️  messagesSaved: Not validated due to error
+      ⚠️  profileUpdated: Not validated due to error
+   ❌ Esteban López (1 turns, 9.7s)
+      ⚠️  leadCreated: Not validated due to error
+      ⚠️  messagesSaved: Not validated due to error
+      ⚠️  profileUpdated: Not validated due to error
+
+⏳ Waiting 5s before next batch...
+
+==================================================
+📦 Batch 2/4
+==================================================
+
+🤖 Starting conversation: Ana Martínez (abandoner-ana)
+   User: Necesito una web YA. Cuánto cuesta y en cuánto tiempo la tienen lista?
+
+🤖 Starting conversation: Víctor Sánchez (vague-victor)
+   User: Hola, tengo una idea de negocio pero no sé muy bien qué necesito
+
+🤖 Starting conversation: Úrsula Pérez (urgent-ursula)
+   User: Necesito un catálogo digital para ayer. Tengo un cliente grande esperando.
+   ❌ Error: Cannot read properties of null (reading 'from')
+   ❌ Error: Cannot read properties of null (reading 'from')
+   ❌ Error: Cannot read properties of null (reading 'from')
+
+📊 Batch Results:
+   ❌ Ana Martínez (1 turns, 8.8s)
+      ⚠️  leadCreated: Not validated due to error
+      ⚠️  messagesSaved: Not validated due to error
+      ⚠️  profileUpdated: Not validated due to error
+   ❌ Víctor Sánchez (1 turns, 9.2s)
+      ⚠️  leadCreated: Not validated due to error
+      ⚠️  messagesSaved: Not validated due to error
+      ⚠️  profileUpdated: Not validated due to error
+   ❌ Úrsula Pérez (1 turns, 9.3s)
+      ⚠️  leadCreated: Not validated due to error
+      ⚠️  messagesSaved: Not validated due to error
+      ⚠️  profileUpdated: Not validated due to error
+
+⏳ Waiting 5s before next batch...
+
+==================================================
+📦 Batch 3/4
+==================================================
+
+🤖 Starting conversation: Raquel Torres (researcher-rachel)
+   User: Hola, estoy investigando opciones de desarrollo web para recomendar a mis clientes
+
+🤖 Starting conversation: Roberto Castro (referral-roberto)
+   User: Hola, me recomendó Carlos Jiménez. Necesito una tienda online.
+
+🤖 Starting conversation: Miguel Ángel Vargas (multi-location-miguel)
+   User: Tengo 5 locaciones de mi franquicia. Necesito un sistema que las unifique.
+   ❌ Error: Cannot read properties of null (reading 'from')
+   ❌ Error: Cannot read properties of null (reading 'from')
+   ❌ Error: Cannot read properties of null (reading 'from')
+
+📊 Batch Results:
+   ❌ Raquel Torres (1 turns, 8.8s)
+      ⚠️  leadCreated: Not validated due to error
+      ⚠️  messagesSaved: Not validated due to error
+      ⚠️  profileUpdated: Not validated due to error
+   ❌ Roberto Castro (1 turns, 8.8s)
+      ⚠️  leadCreated: Not validated due to error
+      ⚠️  messagesSaved: Not validated due to error
+      ⚠️  profileUpdated: Not validated due to error
+   ❌ Miguel Ángel Vargas (1 turns, 8.9s)
+      ⚠️  leadCreated: Not validated due to error
+      ⚠️  messagesSaved: Not validated due to error
+      ⚠️  profileUpdated: Not validated due to error
+
+⏳ Waiting 5s before next batch...
+
+==================================================
+📦 Batch 4/4
+==================================================
+
+🤖 Starting conversation: Irene Morales (international-irene)
+   User: Hola, estoy en Miami pero quiero vender productos en Colombia. Pueden ayudarme?
+   ❌ Error: Cannot read properties of null (reading 'from')
+
+📊 Batch Results:
+   ❌ Irene Morales (1 turns, 8.9s)
+      ⚠️  leadCreated: Not validated due to error
+      ⚠️  messagesSaved: Not validated due to error
+      ⚠️  profileUpdated: Not validated due to error
+
+
+==================================================
+📊 FINAL SUMMARY
+==================================================
+
+📈 Results:
+   Total Tests: 10
+   ✅ Passed: 0
+   ❌ Failed: 10
+   ⏱️  Total Duration: 91.2s
+   📊 Success Rate: 0.0%
+
+🚨 Failed Tests:
+
+   ❌ Harry Gómez (happy-path-harry)
+      Expected: books
+      Error: Cannot read properties of null (reading 'from')
+      Validations:
+         ❌ leadCreated: Not validated due to error
+         ❌ messagesSaved: Not validated due to error
+         ❌ profileUpdated: Not validated due to error
+
+   ❌ Paula Rodríguez (price-conscious-paula)
+      Expected: books
+      Error: Cannot read properties of null (reading 'from')
+      Validations:
+         ❌ leadCreated: Not validated due to error
+         ❌ messagesSaved: Not validated due to error
+         ❌ profileUpdated: Not validated due to error
+
+   ❌ Esteban López (skeptical-steve)
+      Expected: books
+      Error: Cannot read properties of null (reading 'from')
+      Validations:
+         ❌ leadCreated: Not validated due to error
+         ❌ messagesSaved: Not validated due to error
+         ❌ profileUpdated: Not validated due to error
+
+   ❌ Ana Martínez (abandoner-ana)
+      Expected: abandons
+      Error: Cannot read properties of null (reading 'from')
+      Validations:
+         ❌ leadCreated: Not validated due to error
+         ❌ messagesSaved: Not validated due to error
+         ❌ profileUpdated: Not validated due to error
+
+   ❌ Víctor Sánchez (vague-victor)
+      Expected: books
+      Error: Cannot read properties of null (reading 'from')
+      Validations:
+         ❌ leadCreated: Not validated due to error
+         ❌ messagesSaved: Not validated due to error
+         ❌ profileUpdated: Not validated due to error
+
+   ❌ Úrsula Pérez (urgent-ursula)
+      Expected: books
+      Error: Cannot read properties of null (reading 'from')
+      Validations:
+         ❌ leadCreated: Not validated due to error
+         ❌ messagesSaved: Not validated due to error
+         ❌ profileUpdated: Not validated due to error
+
+   ❌ Raquel Torres (researcher-rachel)
+      Expected: researching
+      Error: Cannot read properties of null (reading 'from')
+      Validations:
+         ❌ leadCreated: Not validated due to error
+         ❌ messagesSaved: Not validated due to error
+         ❌ profileUpdated: Not validated due to error
+
+   ❌ Roberto Castro (referral-roberto)
+      Expected: books
+      Error: Cannot read properties of null (reading 'from')
+      Validations:
+         ❌ leadCreated: Not validated due to error
+         ❌ messagesSaved: Not validated due to error
+         ❌ profileUpdated: Not validated due to error
+
+   ❌ Miguel Ángel Vargas (multi-location-miguel)
+      Expected: books
+      Error: Cannot read properties of null (reading 'from')
+      Validations:
+         ❌ leadCreated: Not validated due to error
+         ❌ messagesSaved: Not validated due to error
+         ❌ profileUpdated: Not validated due to error
+
+   ❌ Irene Morales (international-irene)
+      Expected: books
+      Error: Cannot read properties of null (reading 'from')
+      Validations:
+         ❌ leadCreated: Not validated due to error
+         ❌ messagesSaved: Not validated due to error
+         ❌ profileUpdated: Not validated due to error
+
+==================================================
+
+💾 Detailed report saved: /home/luis/Desktop/PROYECTO LANDING PAGES & SHOPIFYS/MI IA LANDING STABLE TO AI BRAIN/test-results.json

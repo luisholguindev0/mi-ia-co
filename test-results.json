@@ -1,10 +1,10 @@
 {
-  "timestamp": "2025-12-18T20:45:54.350Z",
+  "timestamp": "2025-12-18T21:01:00.975Z",
   "summary": {
     "total": 10,
     "passed": 0,
     "failed": 10,
-    "totalDuration": 41005
+    "totalDuration": 91216
   },
   "results": [
     {
@@ -12,7 +12,7 @@
       "personaName": "Harry Gómez",
       "success": false,
       "turnCount": 1,
-      "duration": 4056,
+      "duration": 9162,
       "expectedOutcome": "books",
       "conversationLog": [
         {
@@ -41,7 +41,7 @@
       "personaName": "Paula Rodríguez",
       "success": false,
       "turnCount": 1,
-      "duration": 4437,
+      "duration": 9644,
       "expectedOutcome": "books",
       "conversationLog": [
         {
@@ -70,7 +70,7 @@
       "personaName": "Esteban López",
       "success": false,
       "turnCount": 1,
-      "duration": 4646,
+      "duration": 9746,
       "expectedOutcome": "books",
       "conversationLog": [
         {
@@ -99,7 +99,7 @@
       "personaName": "Ana Martínez",
       "success": false,
       "turnCount": 1,
-      "duration": 4416,
+      "duration": 8821,
       "expectedOutcome": "abandons",
       "conversationLog": [
         {
@@ -128,7 +128,7 @@
       "personaName": "Víctor Sánchez",
       "success": false,
       "turnCount": 1,
-      "duration": 4441,
+      "duration": 9242,
       "expectedOutcome": "books",
       "conversationLog": [
         {
@@ -157,7 +157,7 @@
       "personaName": "Úrsula Pérez",
       "success": false,
       "turnCount": 1,
-      "duration": 4441,
+      "duration": 9282,
       "expectedOutcome": "books",
       "conversationLog": [
         {
@@ -186,7 +186,7 @@
       "personaName": "Raquel Torres",
       "success": false,
       "turnCount": 1,
-      "duration": 3563,
+      "duration": 8772,
       "expectedOutcome": "researching",
       "conversationLog": [
         {
@@ -215,7 +215,7 @@
       "personaName": "Roberto Castro",
       "success": false,
       "turnCount": 1,
-      "duration": 3635,
+      "duration": 8763,
       "expectedOutcome": "books",
       "conversationLog": [
         {
@@ -244,7 +244,7 @@
       "personaName": "Miguel Ángel Vargas",
       "success": false,
       "turnCount": 1,
-      "duration": 3636,
+      "duration": 8858,
       "expectedOutcome": "books",
       "conversationLog": [
         {
@@ -273,7 +273,7 @@
       "personaName": "Irene Morales",
       "success": false,
       "turnCount": 1,
-      "duration": 3734,
+      "duration": 8926,
       "expectedOutcome": "books",
       "conversationLog": [
         {

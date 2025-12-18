@@ -83,11 +83,17 @@ export async function runPersonaConversation(
             }
 
             // Generate persona's response using AI
-            const personaResponse = await generatePersonaResponse(
-                persona,
-                aiResponse,
-                conversationLog
-            );
+            let personaResponse: string;
+            try {
+                personaResponse = await generatePersonaResponse(
+                    persona,
+                    aiResponse,
+                    conversationLog
+                );
+            } catch (error) {
+                console.error(`   ❌ Error generating persona response:`, error);
+                throw error;
+            }
 
             console.log(`   User: ${personaResponse}`);
             conversationLog.push({ role: 'user', content: personaResponse });
@@ -147,23 +153,45 @@ export async function runPersonaConversation(
  * Get the latest AI response from the database
  */
 async function getLatestAIResponse(phoneNumber: string): Promise<string | null> {
-    const { data: lead } = await supabaseAdmin
-        .from('leads')
-        .select('id')
-        .eq('phone_number', phoneNumber)
-        .single();
+    try {
+        const { data: lead, error: leadError } = await supabaseAdmin
+            .from('leads')
+            .select('id')
+            .eq('phone_number', phoneNumber)
+            .single();
 
-    if (!lead) return null;
+        if (leadError) {
+            console.error(`   DB Error fetching lead:`, leadError.message);
+            return null;
+        }
 
-    const { data: messages } = await supabaseAdmin
-        .from('messages')
-        .select('content')
-        .eq('lead_id', lead.id)
-        .eq('role', 'assistant')
-        .order('created_at', { ascending: false })
-        .limit(1);
+        if (!lead) {
+            console.log(`   No lead found for ${phoneNumber}`);
+            return null;
+        }
 
-    return messages?.[0]?.content || null;
+        const { data: messages, error: msgError } = await supabaseAdmin
+            .from('messages')
+            .select('content')
+            .eq('lead_id', lead.id)
+            .eq('role', 'assistant')
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+        if (msgError) {
+            console.error(`   DB Error fetching messages:`, msgError.message);
+            return null;
+        }
+
+        if (!messages || messages.length === 0) {
+            return null;
+        }
+
+        return messages[0].content;
+    } catch (error) {
+        console.error(`   Exception in getLatestAIResponse:`, error);
+        return null;
+    }
 }
 
 /**
