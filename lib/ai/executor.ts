@@ -6,7 +6,6 @@
 
 import { supabaseAdmin } from '@/lib/db';
 import { getAvailableSlots, bookSlot } from '@/lib/booking';
-import { sendWhatsAppMessage } from '@/lib/whatsapp/api';
 import type { AgentResponse } from './tools';
 
 interface Lead {

@@ -96,8 +96,31 @@ export async function bookSlot(
     startTime: string,
     notes?: string
 ): Promise<Appointment | null> {
+    // Parse and validate times
+    const startHour = parseInt(startTime.split(':')[0]);
+    const endHour = startHour + 1;
+
+    // Guard: End time must be within business hours
+    if (endHour > BUSINESS_HOURS.end) {
+        console.error(`Cannot book slot: end time ${endHour}:00 exceeds business hours (${BUSINESS_HOURS.end}:00)`);
+        return null;
+    }
+
+    // Guard: Start time must be within business hours
+    if (startHour < BUSINESS_HOURS.start) {
+        console.error(`Cannot book slot: start time ${startHour}:00 is before business hours (${BUSINESS_HOURS.start}:00)`);
+        return null;
+    }
+
+    // Guard: Cannot book in the past
+    const bookingDate = new Date(`${date}T${startTime}:00-05:00`);
+    if (bookingDate < new Date()) {
+        console.error(`Cannot book slot in the past: ${date} ${startTime}`);
+        return null;
+    }
+
     const startDateTime = `${date}T${startTime}:00-05:00`;
-    const endDateTime = `${date}T${parseInt(startTime.split(':')[0]) + 1}:00:00-05:00`;
+    const endDateTime = `${date}T${String(endHour).padStart(2, '0')}:00:00-05:00`;
 
     // Use upsert with conflict detection (leverages the no_overlap constraint)
     const { data, error } = await supabaseAdmin

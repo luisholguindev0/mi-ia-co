@@ -113,6 +113,14 @@ export const processWhatsAppMessage = inngest.createFunction(
             }
 
             // ═══════════════════════════════════════════════════════════════
+            // GUARD: Skip empty messages (emojis only, media, etc.)
+            // ═══════════════════════════════════════════════════════════════
+            if (!text || text.trim() === '') {
+                console.log(`⚠️ Empty message from ${phoneNumber}, skipping AI processing`);
+                return { success: true, skipped: 'empty_message', leadId: lead.id };
+            }
+
+            // ═══════════════════════════════════════════════════════════════
             // STEP 2: Save User Message to Database
             // ═══════════════════════════════════════════════════════════════
             const t2Start = Date.now();
@@ -205,8 +213,21 @@ export const processWhatsAppMessage = inngest.createFunction(
             console.log(`⏱️ Step 6 Start (WhatsApp Send)`);
 
             await step.run(`whatsapp-send-${messageId}`, async () => {
-                console.log(`📤 Sending to ${phoneNumber}: "${aiResponse.message.substring(0, 100)}..."`);
-                await sendWhatsAppMessage(phoneNumber, aiResponse.message);
+                // Guard: Skip empty AI responses
+                if (!aiResponse.message || aiResponse.message.trim() === '') {
+                    console.warn(`⚠️ AI returned empty message, skipping WhatsApp send`);
+                    return;
+                }
+
+                // Guard: Truncate very long messages (WhatsApp limit ~4096)
+                let messageToSend = aiResponse.message;
+                if (messageToSend.length > 4000) {
+                    console.warn(`⚠️ AI message too long (${messageToSend.length}), truncating`);
+                    messageToSend = messageToSend.substring(0, 3997) + '...';
+                }
+
+                console.log(`📤 Sending to ${phoneNumber}: "${messageToSend.substring(0, 100)}..."`);
+                await sendWhatsAppMessage(phoneNumber, messageToSend);
             });
             console.log(`⏱️ Step 6 End. Duration: ${Date.now() - t6Start}ms`);
 
