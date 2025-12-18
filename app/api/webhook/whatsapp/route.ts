@@ -33,12 +33,24 @@ export async function POST(req: NextRequest) {
         console.log('📦 Raw Body:', bodyText.substring(0, 200) + '...');
 
         // 1. Security Check (HMAC)
-        // NOTE: Enabled only if WHATSAPP_APP_SECRET is present to allow easier local testing
         if (process.env.WHATSAPP_APP_SECRET) {
             const signature = req.headers.get('x-hub-signature-256');
-            if (!signature || !(await verifySignature(bodyText, signature, process.env.WHATSAPP_APP_SECRET))) {
+            console.log(`🔐 Verifying Signature: ${signature ? 'Present' : 'MISSING'}`);
+
+            if (!signature) {
+                console.error('❌ Missing Signature');
                 return new NextResponse('Unauthorized', { status: 401 });
             }
+
+            const isValid = await verifySignature(bodyText, signature, process.env.WHATSAPP_APP_SECRET);
+            console.log(`🔐 Signature Valid? ${isValid ? 'YES' : 'NO'}`);
+
+            if (!isValid) {
+                console.error('❌ Signature Mismatch');
+                return new NextResponse('Unauthorized', { status: 401 });
+            }
+        } else {
+            console.warn('⚠️ WHATSAPP_APP_SECRET not set - Skipping HMAC check');
         }
 
         const body = JSON.parse(bodyText);
@@ -52,16 +64,22 @@ export async function POST(req: NextRequest) {
         if (message) {
             // 3. Async Handoff (The "Traffic Controller")
             // We push the event to Inngest and respond 200 OK immediately
-            await inngest.send({
-                name: "whatsapp/message.received",
-                data: {
-                    messageId: message.id,
-                    from: message.from, // Phone number
-                    text: message.text?.body || '', // Text content
-                    timestamp: message.timestamp,
-                    name: value?.contacts?.[0]?.profile?.name || 'Unknown',
-                },
-            });
+            try {
+                const ids = await inngest.send({
+                    name: "whatsapp/message.received",
+                    data: {
+                        messageId: message.id,
+                        from: message.from, // Phone number
+                        text: message.text?.body || '', // Text content
+                        timestamp: message.timestamp,
+                        name: value?.contacts?.[0]?.profile?.name || 'Unknown',
+                    },
+                });
+                console.log(`🚀 Event sent to Inngest: ${JSON.stringify(ids)}`);
+            } catch (err: any) {
+                console.error(`❌ Inngest Send Failed: ${err.message}`);
+                // We typically still want to return 200 to WhatsApp to avoid retries of a broken handler
+            }
         }
 
         return new NextResponse('EVENT_RECEIVED', { status: 200 });

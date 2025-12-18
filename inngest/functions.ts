@@ -10,7 +10,7 @@ import { routeToAgent } from "@/lib/ai/agents";
 import { sendWhatsAppMessage } from "@/lib/whatsapp/api";
 
 export const processWhatsAppMessage = inngest.createFunction(
-    { id: "process-whatsapp-message", concurrency: 10 }, // Rate limit processing
+    { id: "process-whatsapp-message", concurrency: 4 }, // Rate limit processing (Free Tier Max is 5)
     { event: "whatsapp/message.received" },
     async ({ event, step }) => {
         try {
