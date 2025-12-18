@@ -1,8 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { Database } from '../database.types';
 
 // Lazy initialization to ensure env vars are loaded first
-let _supabaseAdmin: ReturnType<typeof createClient> | null = null;
-let _supabase: ReturnType<typeof createClient> | null = null;
+let _supabaseAdmin: SupabaseClient<Database> | null = null;
+let _supabase: SupabaseClient<Database> | null = null;
 
 export function getSupabaseAdmin() {
     if (!_supabaseAdmin) {
@@ -13,7 +14,7 @@ export function getSupabaseAdmin() {
             throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
         }
 
-        _supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+        _supabaseAdmin = createClient<Database>(supabaseUrl, supabaseServiceKey);
     }
     return _supabaseAdmin;
 }
@@ -27,21 +28,23 @@ export function getSupabase() {
             throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY');
         }
 
-        _supabase = createClient(supabaseUrl, supabaseAnonKey);
+        _supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
     }
     return _supabase;
 }
 
 // For backward compatibility with existing code
 // These will be initialized on first access
-export const supabaseAdmin = new Proxy({} as ReturnType<typeof createClient>, {
+export const supabaseAdmin = new Proxy({} as SupabaseClient<Database>, {
     get(target, prop) {
-        return getSupabaseAdmin()[prop as keyof ReturnType<typeof createClient>];
+        const client = getSupabaseAdmin();
+        return client[prop as keyof SupabaseClient<Database>];
     }
 });
 
-export const supabase = new Proxy({} as ReturnType<typeof createClient>, {
+export const supabase = new Proxy({} as SupabaseClient<Database>, {
     get(target, prop) {
-        return getSupabase()[prop as keyof ReturnType<typeof createClient>];
+        const client = getSupabase();
+        return client[prop as keyof SupabaseClient<Database>];
     }
 });

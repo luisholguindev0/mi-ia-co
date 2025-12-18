@@ -24,21 +24,20 @@ export const theSheriff = inngest.createFunction(
                 .eq("status", "unconfirmed")
                 .lt("created_at", oneHourAgo);
 
-            if (fetchError) throw new Error(fetchError.message);
-
-            if (staleAppointments && staleAppointments.length > 0) {
-                const ids = staleAppointments.map((a: { id: string }) => a.id);
-                // Bulk update
-                const { error: updateError } = await supabaseAdmin
-                    .from("appointments")
-                    .update({ status: "cancelled" })
-                    .in("id", ids);
-
-                if (updateError) throw new Error(updateError.message);
-
-                return { cancelled: ids.length, ids };
+            if (fetchError || !staleAppointments || staleAppointments.length === 0) {
+                if (fetchError) throw new Error(fetchError.message);
+                return { cancelled: 0 };
             }
-            return { cancelled: 0 };
+            const ids = staleAppointments.map((a: { id: string }) => a.id);
+            // Bulk update
+            const { error: updateError } = await supabaseAdmin
+                .from("appointments")
+                .update({ status: "cancelled" })
+                .in("id", ids);
+
+            if (updateError) throw new Error(updateError.message);
+
+            return { cancelled: ids.length, ids };
         });
 
         // Task 2: Send Reminders (24h before)
@@ -60,8 +59,10 @@ export const theSheriff = inngest.createFunction(
                 .gte("start_time", windowStart)
                 .lte("start_time", windowEnd);
 
-            if (error) throw new Error(error.message);
-            if (!upcoming || upcoming.length === 0) return { sent: 0 };
+            if (error || !upcoming || upcoming.length === 0) {
+                if (error) throw new Error(error.message);
+                return { sent: 0 };
+            }
 
             let count = 0;
             const errors = [];

@@ -113,7 +113,7 @@ export async function updateSetting(key: string, value: unknown, userId?: string
     const { error } = await supabaseAdmin
         .from('business_settings')
         .update({
-            value,
+            value: value as any,
             updated_at: new Date().toISOString(),
             updated_by: userId || null,
         })

@@ -12,19 +12,25 @@ export default async function SettingsPage() {
     }
 
     // Fetch current settings
-    const { data: settings } = await supabaseAdmin
+    const { data: settings, error } = await supabaseAdmin
         .from('business_settings')
         .select('*')
         .order('key');
 
+    if (error) {
+        console.error('Failed to fetch settings:', error);
+    }
+
     // Transform to a more usable format
     const settingsMap: Record<string, { value: unknown; description: string; updatedAt: string }> = {};
-    for (const setting of settings || []) {
-        settingsMap[setting.key] = {
-            value: setting.value,
-            description: setting.description,
-            updatedAt: setting.updated_at,
-        };
+    if (settings) {
+        for (const setting of settings) {
+            settingsMap[setting.key] = {
+                value: setting.value,
+                description: setting.description || '',
+                updatedAt: setting.updated_at || new Date().toISOString(),
+            };
+        }
     }
 
     return (

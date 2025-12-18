@@ -99,11 +99,15 @@ export const processWhatsAppMessage = inngest.createFunction(
             console.log(`⏱️ Step 1 Start (Get/Create Lead): Phone=${phoneNumber}`);
 
             const lead = await step.run(`get-lead-${messageId}`, async () => {
-                const { data: existingLead } = await supabaseAdmin
+                const { data: existingLead, error: fetchError } = await supabaseAdmin
                     .from("leads")
                     .select("*")
                     .eq("phone_number", phoneNumber)
                     .single();
+
+                if (fetchError && fetchError.code !== 'PGRST116') {
+                    throw new Error(`Failed to fetch lead: ${fetchError.message}`);
+                }
 
                 if (existingLead) {
                     // Update last_active timestamp
@@ -125,7 +129,7 @@ export const processWhatsAppMessage = inngest.createFunction(
                     .select()
                     .single();
 
-                if (error) throw new Error(`Failed to create lead: ${error.message}`);
+                if (error || !newLead) throw new Error(`Failed to create lead: ${error?.message || 'Unknown error'}`);
                 return newLead;
             });
             console.log(`⏱️ Step 1 End. Duration: ${Date.now() - t1Start}ms | LeadID: ${lead.id}`);
@@ -291,7 +295,7 @@ export const processWhatsAppMessage = inngest.createFunction(
 
                 await step.run(`tools-${messageId}`, async () => {
                     // Execute all tool calls (profile updates, booking, handoff)
-                    const results = await executeToolCalls(aiResponse.toolCalls!, lead.id, lead);
+                    const results = await executeToolCalls(aiResponse.toolCalls!, lead.id, lead as any);
 
                     console.log("📋 Tool execution results:", JSON.stringify(results));
 
@@ -299,10 +303,11 @@ export const processWhatsAppMessage = inngest.createFunction(
                     await supabaseAdmin.from("audit_logs").insert({
                         lead_id: lead.id,
                         event_type: "tool_execution",
+                        model_used: "deepseek-v3",
                         payload: {
                             toolCalls: aiResponse.toolCalls,
                             results: results,
-                        },
+                        } as any,
                         latency_ms: Date.now() - t7Start,
                     });
                 });

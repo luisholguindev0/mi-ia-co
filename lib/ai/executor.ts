@@ -75,7 +75,7 @@ export async function executeToolCalls(
                     const { error } = await supabaseAdmin
                         .from('leads')
                         .update({
-                            profile: newProfile,
+                            profile: newProfile as any,
                             ...(args.leadScore !== undefined && { lead_score: args.leadScore }),
                         })
                         .eq('id', leadId);

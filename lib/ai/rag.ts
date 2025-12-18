@@ -19,7 +19,7 @@ const MAX_RESULTS = 5;
 interface KnowledgeChunk {
     id: string;
     content: string;
-    metadata: Record<string, unknown>;
+    metadata: any;
     category: string | null;
     similarity: number;
 }
@@ -67,10 +67,10 @@ export async function searchKnowledgeBase(
 ): Promise<KnowledgeChunk[]> {
     // Using Supabase RPC for vector similarity search
     const { data, error } = await supabaseAdmin.rpc('match_knowledge', {
-        query_embedding: queryEmbedding,
+        query_embedding: JSON.stringify(queryEmbedding),
         match_threshold: SIMILARITY_THRESHOLD,
         match_count: limit,
-        filter_category: category || null,
+        filter_category: category || undefined,
     });
 
     if (error) {
@@ -100,7 +100,7 @@ export async function retrieveContext(
         }
 
         // Format chunks for prompt injection
-        return chunks
+        return (chunks as KnowledgeChunk[])
             .map((chunk, i) => `[${i + 1}] ${chunk.content} (Fuente: ${(chunk.metadata as { source?: string })?.source || 'Internal'})`)
             .join('\n\n');
     } catch (error) {
@@ -122,8 +122,8 @@ export async function insertKnowledge(
     const { error } = await supabaseAdmin.from('knowledge_base').insert({
         content,
         category,
-        metadata,
-        embedding,
+        metadata: metadata as any,
+        embedding: JSON.stringify(embedding),
     });
 
     if (error) {

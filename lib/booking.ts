@@ -158,10 +158,10 @@ export async function bookSlot(
 
     return {
         id: data.id,
-        leadId: data.lead_id,
+        leadId: data.lead_id as string,
         startTime: data.start_time,
         endTime: data.end_time,
-        status: data.status,
+        status: data.status as string,
     };
 }
 

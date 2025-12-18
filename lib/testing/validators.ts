@@ -188,7 +188,7 @@ export async function validateSentimentLogged(
     }
 
     const log = logs[logs.length - 1]; // Get most recent
-    const signalType = log.payload?.signal_type;
+    const signalType = (log.payload as any)?.signal_type;
 
     if (signalType !== expectedSignalType) {
         return {

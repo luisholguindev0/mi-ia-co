@@ -161,13 +161,8 @@ async function getLatestAIResponse(phoneNumber: string): Promise<string | null> 
             .eq('phone_number', phoneNumber)
             .single();
 
-        if (leadError) {
-            console.error(`   DB Error fetching lead:`, leadError.message);
-            return null;
-        }
-
-        if (!lead) {
-            console.log(`   No lead found for ${phoneNumber}`);
+        if (leadError || !lead) {
+            console.error(`   DB Error fetching lead:`, leadError?.message || 'No lead found');
             return null;
         }
 
@@ -177,7 +172,7 @@ async function getLatestAIResponse(phoneNumber: string): Promise<string | null> 
             .eq('lead_id', lead.id)
             .eq('role', 'assistant')
             .order('created_at', { ascending: false })
-            .limit(1);
+            .limit(1) as { data: Array<{ content: string }> | null; error: any };
 
         if (msgError) {
             console.error(`   DB Error fetching messages:`, msgError.message);

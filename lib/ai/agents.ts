@@ -211,14 +211,18 @@ async function logAgentDecision(params: {
     model: string;
     latencyMs: number;
     payload: Record<string, unknown>;
+    inputTokens?: number;
+    outputTokens?: number;
 }): Promise<void> {
     try {
         await supabaseAdmin.from('audit_logs').insert({
             lead_id: params.leadId,
             event_type: params.eventType,
             model_used: params.model,
-            latency_ms: params.latencyMs,
-            payload: params.payload,
+            input_tokens: params.inputTokens,
+            output_tokens: params.outputTokens,
+            payload: params.payload as any,
+            latency_ms: Math.round(params.latencyMs),
         });
     } catch (error) {
         console.error('Failed to log agent decision:', error);
