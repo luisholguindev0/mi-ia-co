@@ -168,6 +168,24 @@ export const processWhatsAppMessage = inngest.createFunction(
                     console.error("Failed to save user message:", error);
                     // Don't throw - we can still try to respond
                 }
+
+                // Sentiment detection for abandonment monitoring
+                const { detectNegativeSentiment, getSentimentSignalType } = await import("@/lib/ai/sentiment");
+
+                if (detectNegativeSentiment(text)) {
+                    const signalType = getSentimentSignalType(text);
+                    await supabaseAdmin.from("audit_logs").insert({
+                        lead_id: lead.id,
+                        event_type: "negative_sentiment_detected",
+                        payload: {
+                            message: redactPII(text),
+                            signal_type: signalType
+                        },
+                        latency_ms: 0,
+                    });
+
+                    console.warn(`⚠️ Negative sentiment detected from ${phoneNumber}: ${signalType}`);
+                }
             });
             console.log(`⏱️ Step 2 End. Duration: ${Date.now() - t2Start}ms`);
 
