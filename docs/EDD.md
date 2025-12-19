@@ -327,9 +327,14 @@ WEEK 4: The Grand Opening (Launch & Scale) - **[COMPLETED]**
 
 **Status**: ✅ **Stable** | 🚀 **Ghost Repetition Eliminated**
 
+
 #### The "Ghost Repetition" Bug
 - **Discovery**: During sequential testing, the persona engine would sometimes respond to the *same* AI message multiple times if the database polling was faster than the AI's internal state update.
 - **Solution**: Implemented `lastAiMessageId` tracking in `lib/testing/test-orchestrator.ts`. The orchestrator now explicitly excludes the previously processed message ID from the polling query, ensuring a 1:1 conversation flow.
+
+#### The "Zombie Loop" Fix (Booking Override)
+- **Discovery**: The Doctor Agent would ask for a booking time but fail to set `nextState: "qualified"`, trapping the user in a diagnostic loop.
+- **Solution**: Updated `DOCTOR_SYSTEM_PROMPT` with a **JSON MANDATE**. If the user mentions "agendar" or a time, the AI is forced to output `"nextState": "qualified"`, bypassing all other logic.
 
 #### Brain Tuning: Surgical Precision
 - **Elena (Doctor)**: Refocused on identifying 2 pain points and bridging to Luis. Responses limited to ~25 words. Forbidden from "emotional echoing" (repeating the user's pain back to them).

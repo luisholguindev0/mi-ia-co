@@ -1,6 +1,30 @@
 # MEMORY.md - Wrap Up: AI Brain Tuning & Test Framework Stabilization
-**Date**: 2025-12-18 22:15 EST  
-**Status**: ✅ **Brain Tuned for Precision** | 🧪 **Test Loops Fixed** | 📚 **Knowledge Base Enriched**
+**Date**: 2025-12-19 06:15 EST  
+**Status**: ✅ **Brain Tuned for Precision** | 🧪 **"Zombie Loop" Fixed** | 🚀 **Aggressive Booking Logic**
+
+## Session Accomplishments
+
+### 50. The "Zombie Loop" Fix (Critical AI Logic)
+- **Problem**: The Doctor Agent (DeepSeek) mimicked the Closer Agent by asking for times but failed to technically hand off the conversation (did not set `nextState: "qualified"`). This created an infinite loop where the AI kept asking "What time works?" but could never book the slot.
+- **Solution**: Implemented a **"Nuclear Option"** in `lib/ai/prompts.ts`:
+    - Added a **CRITICAL: Booking Override** rule.
+    - **JSON MANDATE**: Explicitly instructed the AI that if booking intent is detected, it **MUST** output `"nextState": "qualified"`.
+    - Disables all diagnostic rules (Value-First, No-Repetition) once booking signals are found.
+- **Result**: Validated locally. The AI now immediately transitions to the Booking phase upon hearing "agendar" or a specific time.
+
+### 51. Test Framework Stabilization
+- **Fixed**: "Ghost Repetition" bug in `lib/testing/test-orchestrator.ts` (1:1 messaging logic).
+- **Fixed**: Database cleanup script now properly handles foreign key constraints (`audit_logs` -> `leads`).
+- **Tuned**: Increased AI polling timeouts to 30s to handle DeepSeek API latency during heavy loads.
+
+### 52. Verification & Deployment
+- **Verified**: `happy-path-eager` scenario passed with clean handoff.
+- **Deployed**: All fixes pushed to `main` (Commit `227390f`).
+- **Ready**: System is live on Vercel and ready for real-world traffic.
+
+---
+
+
 
 ## Session Accomplishments
 
