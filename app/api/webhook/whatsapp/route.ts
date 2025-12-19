@@ -36,9 +36,9 @@ export async function POST(req: NextRequest) {
 
         // Extract phone number to check if this is a test
         const phoneNumber = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from;
-        const isTestNumber = phoneNumber?.startsWith('5799999') ?? false;
+        const isTestNumber = (phoneNumber?.startsWith('5799999') || phoneNumber?.startsWith('570000000')) ?? false;
 
-        // Skip signature verification for test phone numbers (5799999XXX)
+        // Skip signature verification for test phone numbers
         if (!isTestNumber) {
             if (process.env.WHATSAPP_APP_SECRET) {
                 const signature = req.headers.get('x-hub-signature-256');
