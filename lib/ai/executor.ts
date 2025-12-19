@@ -7,6 +7,7 @@
 import { supabaseAdmin } from '@/lib/db';
 import { getAvailableSlots, bookSlot } from '@/lib/booking';
 import type { AgentResponse } from './tools';
+import { parseSpanishDate, parseSpanishTime } from '@/lib/utils/date-utils';
 
 interface Lead {
     id: string;
@@ -100,21 +101,31 @@ export async function executeToolCalls(
                         break;
                     }
 
+                    // Parse Spanish date if needed ("miércoles" → "2025-12-25")
+                    let parsedDate = parseSpanishDate(args.date);
+                    if (parsedDate) {
+                        console.log(`📅 Parsed date: "${args.date}" → "${parsedDate}"`);
+                    } else {
+                        // Fall back to original if parsing fails
+                        parsedDate = args.date;
+                    }
+
                     // Validate date format
-                    if (isNaN(new Date(args.date).getTime())) {
+                    if (isNaN(new Date(parsedDate).getTime())) {
+                        console.warn(`⚠️ Invalid date after parsing: "${parsedDate}"`);
                         results.push({
                             tool: 'checkAvailability',
                             success: false,
-                            error: 'Formato de fecha inválido. Usa YYYY-MM-DD.'
+                            error: `No pude entender la fecha "${args.date}". Por favor usa formato YYYY-MM-DD.`
                         });
                         break;
                     }
 
                     try {
-                        const slots = await getAvailableSlots(args.date);
+                        const slots = await getAvailableSlots(parsedDate);
                         const availableSlots = slots.filter(s => s.available);
 
-                        console.log(`✅ Found ${availableSlots.length} available slots for ${args.date}`);
+                        console.log(`✅ Found ${availableSlots.length} available slots for ${parsedDate}`);
                         results.push({ tool: 'checkAvailability', success: true, result: availableSlots });
                     } catch (err) {
                         console.error('Error in getAvailableSlots:', err);
@@ -131,10 +142,48 @@ export async function executeToolCalls(
                         notes?: string;
                     };
 
+                    // Parse Spanish date if needed ("miércoles" → "2025-12-25")
+                    let parsedDate = parseSpanishDate(args.date);
+                    if (parsedDate) {
+                        console.log(`📅 Parsed booking date: "${args.date}" → "${parsedDate}"`);
+                    } else {
+                        parsedDate = args.date;
+                    }
+
+                    // Parse Spanish time if needed ("7am" → "07:00")
+                    let parsedTime = parseSpanishTime(args.startTime);
+                    if (parsedTime) {
+                        console.log(`⏰ Parsed booking time: "${args.startTime}" → "${parsedTime}"`);
+                    } else {
+                        parsedTime = args.startTime;
+                    }
+
+                    // Validate parsed date
+                    if (!parsedDate || isNaN(new Date(parsedDate).getTime())) {
+                        console.warn(`⚠️ Invalid booking date: "${args.date}"`);
+                        results.push({
+                            tool: 'bookSlot',
+                            success: false,
+                            error: `No pude entender la fecha "${args.date}". Por favor usa formato YYYY-MM-DD.`
+                        });
+                        break;
+                    }
+
+                    // Validate parsed time
+                    if (!parsedTime || !/^\d{2}:\d{2}$/.test(parsedTime)) {
+                        console.warn(`⚠️ Invalid booking time: "${args.startTime}"`);
+                        results.push({
+                            tool: 'bookSlot',
+                            success: false,
+                            error: `No pude entender la hora "${args.startTime}". Por favor usa formato HH:MM.`
+                        });
+                        break;
+                    }
+
                     const appointment = await bookSlot(
                         leadId,
-                        args.date,
-                        args.startTime,
+                        parsedDate,
+                        parsedTime,
                         args.notes
                     );
 

@@ -1,100 +1,74 @@
 /**
  * lib/ai/agents.ts
- * AI Agent Definitions: DoctorAgent (R1) & CloserAgent (V3)
- * Uses Vercel AI SDK with DeepSeek models
+ * COMPLETE REWRITE - Single Unified Sales Agent
  * 
- * v2: Now with conversation history injection for multi-turn context
+ * CORE PRINCIPLE: One agent, one goal - book the damn appointment.
  */
 
-import { generateText, generateObject } from 'ai';
+import { generateObject } from 'ai';
 import { createDeepSeek } from '@ai-sdk/deepseek';
-import {
-    DOCTOR_SYSTEM_PROMPT,
-    CLOSER_SYSTEM_PROMPT,
-    FALLBACK_RESPONSES
-} from './prompts';
-import { retrieveContext } from './rag';
+import { SALES_AGENT_PROMPT, BOOKING_AGENT_PROMPT, FALLBACK_RESPONSES } from './prompts';
 import { agentResponseSchema, type AgentResponse } from './tools';
 import { supabaseAdmin } from '@/lib/db';
-import { formatBusinessHoursForAI } from '@/lib/settings';
+import { format, addDays } from 'date-fns';
 
-// Initialize DeepSeek clients
+// Initialize DeepSeek
 const deepseek = createDeepSeek({
     apiKey: process.env.DEEPSEEK_API_KEY!,
 });
 
-// Model selection per EDD spec
-// CAUTION: Switched R1 -> V3 for production latency (40s -> 2s)
-const REASONING_MODEL = deepseek('deepseek-chat'); // Was 'deepseek-reasoner'
-const CONVERSATIONAL_MODEL = deepseek('deepseek-chat'); // V3 for chat
+const AI_MODEL = deepseek('deepseek-chat');
 
 interface AgentContext {
     leadId: string;
     phoneNumber: string;
     userMessage: string;
-    conversationHistory: string; // NEW: Full conversation history string
-    conversationSummary?: string | null; // NEW: Long-term memory
+    conversationHistory: string;
     currentState: string;
 }
 
 /**
- * DoctorAgent: Uses DeepSeek-R1 for complex diagnosis with RAG
- * Implements the full RAG pipeline from EDD Section 2.1
- * Now with conversation history for multi-turn context
+ * Main AI Agent - processes messages and returns structured responses
  */
-export async function runDoctorAgent(ctx: AgentContext): Promise<AgentResponse> {
+export async function runSalesAgent(ctx: AgentContext): Promise<AgentResponse> {
     const startTime = Date.now();
-    console.log(`⏱️ DoctorAgent Start: ${startTime}`);
+    console.log(`🤖 Sales Agent Start | Lead: ${ctx.leadId} | State: ${ctx.currentState}`);
 
     try {
-        // Step 1: Retrieve relevant context from knowledge_base
-        const tRag = Date.now();
-        const [ragContext, businessHoursText] = await Promise.all([
-            retrieveContext(ctx.userMessage),
-            formatBusinessHoursForAI(),
-        ]);
-        console.log(`⏱️ RAG Retrieval Duration: ${Date.now() - tRag}ms`);
+        // Pick prompt based on state
+        const basePrompt = ctx.currentState === 'qualified' || ctx.currentState === 'booked'
+            ? BOOKING_AGENT_PROMPT
+            : SALES_AGENT_PROMPT;
 
-        // Step 2: Build prompt with retrieved context, conversation history, AND business hours
-        const systemPrompt = DOCTOR_SYSTEM_PROMPT
-            .replace('{{RETRIEVED_CONTEXT}}', ragContext)
-            .replace('{{CONVERSATION_HISTORY}}', ctx.conversationHistory)
-            .replace('{{CONVERSATION_SUMMARY}}', ctx.conversationSummary || "No hay resumen previo.")
-            .replace('{{BUSINESS_HOURS}}', businessHoursText)
+        // Inject context
+        const systemPrompt = basePrompt
+            .replace('{{CURRENT_DATE}}', format(new Date(), 'yyyy-MM-dd'))
+            .replace('{{CONVERSATION_HISTORY}}', ctx.conversationHistory || 'Sin historial previo.')
             .replace('{{USER_MESSAGE}}', ctx.userMessage);
 
-        // Step 3: Generate structured response using R1
-        const tGen = Date.now();
+        // Generate response
         const { object: response } = await generateObject({
-            model: REASONING_MODEL,
+            model: AI_MODEL,
             schema: agentResponseSchema,
             system: systemPrompt,
             prompt: ctx.userMessage,
-            temperature: 0.7,
+            temperature: 0.6,
         });
-        console.log(`⏱️ AI Generation Duration (V3): ${Date.now() - tGen}ms`);
 
-        // Step 4: Log to audit_logs
+        const latency = Date.now() - startTime;
+        console.log(`✅ AI Response (${latency}ms): "${response.message.substring(0, 80)}..."`);
+
+        // Log to audit
         await logAgentDecision({
             leadId: ctx.leadId,
-            eventType: 'ai_thought',
-            model: 'deepseek-v3',
-            latencyMs: Date.now() - startTime,
-            payload: {
-                input: ctx.userMessage,
-                output: response,
-                ragContext,
-                historyLength: ctx.conversationHistory.length
-            },
+            latencyMs: latency,
+            response,
         });
 
-        // Step 5: Apply guardrails
         return applyGuardrails(response);
 
     } catch (error) {
-        console.error('DoctorAgent error:', error);
-
-        // Graceful degradation per EDD
+        console.error('❌ Sales Agent Error:', error);
         return {
             message: FALLBACK_RESPONSES.apiError,
             confidence: 0,
@@ -103,162 +77,79 @@ export async function runDoctorAgent(ctx: AgentContext): Promise<AgentResponse> 
 }
 
 /**
- * CloserAgent: Uses DeepSeek-V3 for fast conversational booking
- * Optimized for <200ms latency
- * Now with conversation history for multi-turn context
- */
-export async function runCloserAgent(ctx: AgentContext): Promise<AgentResponse> {
-    const startTime = Date.now();
-
-    try {
-        const systemPrompt = CLOSER_SYSTEM_PROMPT
-            .replace('{{CURRENT_DATETIME}}', new Date().toISOString())
-            .replace('{{CONVERSATION_HISTORY}}', ctx.conversationHistory)
-            // CloserAgent doesn't strictly need summary but good to have context if needed
-            // However, the prompt template might not have the placeholder.
-            // Let's check prompts.ts. It doesn't. We only added it to DOCTOR.
-            // So we leave it as is for Closer, or add it.
-            // For now, adhering to prompts.ts structure.
-            .replace('{{USER_MESSAGE}}', ctx.userMessage);
-
-        const { object: response } = await generateObject({
-            model: CONVERSATIONAL_MODEL,
-            schema: agentResponseSchema,
-            system: systemPrompt,
-            prompt: ctx.userMessage,
-            temperature: 0.5, // Lower temp for more predictable booking flow
-        });
-
-        await logAgentDecision({
-            leadId: ctx.leadId,
-            eventType: 'ai_thought',
-            model: 'deepseek-v3',
-            latencyMs: Date.now() - startTime,
-            payload: {
-                input: ctx.userMessage,
-                output: response,
-                historyLength: ctx.conversationHistory.length
-            },
-        });
-
-        return applyGuardrails(response);
-
-    } catch (error) {
-        console.error('CloserAgent error:', error);
-        return {
-            message: FALLBACK_RESPONSES.apiError,
-            confidence: 0,
-        };
-    }
-}
-
-/**
- * Agent Router: Selects which agent to use based on lead state
+ * Agent router - for backwards compatibility
  */
 export async function routeToAgent(ctx: AgentContext): Promise<AgentResponse> {
-    switch (ctx.currentState) {
-        case 'new':
-        case 'diagnosing':
-            return runDoctorAgent(ctx);
-        case 'qualified':
-        case 'booked':
-            return runCloserAgent(ctx);
-        default:
-            return runDoctorAgent(ctx);
-    }
+    return runSalesAgent(ctx);
 }
 
 /**
- * Guardrails Layer: Promise Firewall + PII Redaction
- * Per EDD Section 2.2
+ * Guardrails - clean up AI response
  */
 function applyGuardrails(response: AgentResponse): AgentResponse {
     let message = response.message;
 
-    // Promise Firewall: Rewrite dangerous commitments
-    const promisePatterns = [
-        { pattern: /garantizamos?\s+retorno/gi, replacement: 'estimamos un potencial retorno' },
-        { pattern: /prometemos?\s+ganancias?/gi, replacement: 'nuestro objetivo es generar' },
-        { pattern: /100%\s+seguro/gi, replacement: 'con alta probabilidad' },
-        { pattern: /sin\s+riesgo/gi, replacement: 'con riesgo minimizado' },
+    // Remove dangerous promises
+    const badPatterns = [
+        /garantizamos?\s+retorno/gi,
+        /prometemos?\s+ganancias?/gi,
+        /100%\s+seguro/gi,
     ];
 
-    for (const { pattern, replacement } of promisePatterns) {
-        message = message.replace(pattern, replacement);
+    for (const pattern of badPatterns) {
+        message = message.replace(pattern, 'estimamos');
     }
 
-    // PII Redaction: Remove credit card patterns
-    message = message.replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '[REDACTED]');
-
-    // Low confidence check
-    if (response.confidence < 0.7) {
-        console.warn('Low confidence response detected:', response.confidence);
-        // Could trigger handoff here
+    // Truncate if too long
+    if (message.length > 500) {
+        message = message.substring(0, 497) + '...';
     }
 
-    return {
-        ...response,
-        message,
-    };
+    return { ...response, message };
 }
 
 /**
- * Log agent decisions to audit_logs for observability
+ * Log AI decision to audit_logs
  */
 async function logAgentDecision(params: {
     leadId: string;
-    eventType: string;
-    model: string;
     latencyMs: number;
-    payload: Record<string, unknown>;
-    inputTokens?: number;
-    outputTokens?: number;
+    response: AgentResponse;
 }): Promise<void> {
     try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await supabaseAdmin.from('audit_logs').insert({
             lead_id: params.leadId,
-            event_type: params.eventType,
-            model_used: params.model,
-            input_tokens: params.inputTokens,
-            output_tokens: params.outputTokens,
-            payload: params.payload as any,
-            latency_ms: Math.round(params.latencyMs),
-        });
+            event_type: 'ai_response',
+            model_used: 'deepseek-chat',
+            latency_ms: params.latencyMs,
+            payload: {
+                message: params.response.message,
+                confidence: params.response.confidence,
+                toolCalls: params.response.toolCalls,
+                nextState: params.response.nextState,
+            },
+        } as any);
     } catch (error) {
-        console.error('Failed to log agent decision:', error);
+        console.error('Failed to log:', error);
     }
 }
 
 /**
- * Summarizes the conversation for long-term memory.
- * Condenses previous summary + new messages into a concise update.
+ * Helper to get date suggestions for the AI
  */
-export async function summarizeConversation(
-    currentSummary: string | null,
-    newMessages: Array<{ role: string; content: string }>
-): Promise<string> {
-    // If no new messages, return existing summary
-    if (!newMessages || newMessages.length === 0) return currentSummary || "";
+export function getNextBusinessDays(count: number = 3): string[] {
+    const days: string[] = [];
+    let date = new Date();
 
-    const { text } = await generateText({
-        model: deepseek('deepseek-chat'), // Use fast model for summarization
-        system: `You are an expert secretary. Your job is to summarize conversation logs into a concise but detailed "Long Term Memory" for a CRM system. 
-        
-        Rules:
-        1. Keep important details: Names, specific business problems, dates mentioned, preferences.
-        2. Discard filler: "Hello", "How are you", "Ok".
-        3. Merge with the EXISTING SUMMARY if provided.
-        4. Output ONLY the new summary text. No preamble.`,
-        prompt: `
-        EXISTING SUMMARY:
-        "${currentSummary || "None"}"
+    while (days.length < count) {
+        date = addDays(date, 1);
+        const dayOfWeek = date.getDay();
+        // Skip weekends (0 = Sunday, 6 = Saturday)
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+            days.push(format(date, 'yyyy-MM-dd'));
+        }
+    }
 
-        NEW MESSAGES TO INTEGRATE:
-        ${newMessages.map(m => `${m.role}: ${m.content}`).join('\n')}
-        
-        GENERATE UPDATED SUMMARY:
-        `,
-    });
-
-    return text;
+    return days;
 }
