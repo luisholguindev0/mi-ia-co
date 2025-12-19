@@ -4,6 +4,32 @@
 
 ---
 
+## December 19, 2025 - APPOINTMENT CANCELLATION FIX
+
+### The Problem
+Appointments were being created but immediately cancelled.
+
+### Root Cause
+1. `lib/booking.ts` created appointments with `status: 'unconfirmed'`
+2. `inngest/sheriff.ts` runs hourly and cancels all `unconfirmed` appointments older than 1 hour
+3. Result: Every appointment got auto-cancelled
+
+### Fix Applied
+Changed `lib/booking.ts` line 148:
+```diff
+- status: 'unconfirmed',
++ status: 'confirmed',
+```
+
+### Verification
+```
+✅ ÉXITO: CITA AGENDADA Y CONFIRMADA
+📅 Fecha: 2025-12-22T15:00:00+00:00 (Monday Dec 22, 10:00 AM)  
+📌 Estado: confirmed
+```
+
+---
+
 ## December 19, 2025 - COMPLETE SYSTEM REBUILD
 
 ### The Problem
