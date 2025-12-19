@@ -41,6 +41,9 @@ async function cleanupTestData() {
 
         if (leads && leads.length > 0) {
             const leadIds = leads.map(l => l.id);
+            // Delete dependent records first
+            await supabaseAdmin.from('messages').delete().in('lead_id', leadIds);
+            await supabaseAdmin.from('appointments').delete().in('lead_id', leadIds);
             await supabaseAdmin
                 .from('audit_logs')
                 .delete()
