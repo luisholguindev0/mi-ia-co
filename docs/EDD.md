@@ -1,19 +1,17 @@
 # MI IA COLOMBIA - Engineering Design Document
 
-**Version**: 6.0.0 (Production - December 2025)  
-**Status**: ✅ **WORKING** - Verified E2E on Dec 19, 2025
+**Version**: 6.1.0 (Production Ready - December 19, 2025)  
+**Status**: ✅ **VERIFIED WORKING** - E2E test passed, appointments confirmed
 
 ---
 
-## 1. What This App Actually Does
+## 1. What This App Does
 
 **Mi IA Colombia** is an autonomous WhatsApp sales assistant that:
 1. Receives WhatsApp messages via webhook
 2. Uses DeepSeek AI to have natural conversations in Colombian Spanish
 3. Books appointments automatically when customers request demos
 4. Provides an admin dashboard to monitor and manage leads
-
-That's it. No overcomplicated "multi-agent cognitive architecture". Just a simple, working booking system.
 
 ---
 
@@ -30,7 +28,7 @@ That's it. No overcomplicated "multi-agent cognitive architecture". Just a simpl
 
 ---
 
-## 3. Core Architecture (Simple Version)
+## 3. Architecture
 
 ```
 WhatsApp → Webhook → Inngest Queue → AI Agent → Tool Execution → WhatsApp
@@ -42,28 +40,20 @@ WhatsApp → Webhook → Inngest Queue → AI Agent → Tool Execution → Whats
 1. **Webhook receives message** (`/api/webhook/whatsapp`)
 2. **Queued via Inngest** (async, prevents timeouts)
 3. **AI generates response** (DeepSeek via `generateObject`)
-4. **Tools executed** (if AI requests booking/profile update)
+4. **Tools executed** (booking, profile update)
 5. **Response sent to WhatsApp**
 
 ---
 
-## 4. Database Schema (What Matters)
+## 4. Database Tables
 
-### `leads`
-- `id`, `phone_number`, `status`, `profile` (jsonb)
-- Status: `new` → `diagnosing` → `qualified` → `booked`
-
-### `messages`
-- `id`, `lead_id`, `role` (user/assistant), `content`, `created_at`
-
-### `appointments`
-- `id`, `lead_id`, `start_time`, `end_time`, `status`
-
-### `business_settings`
-- Key-value store for business hours, slot duration, etc.
-
-### `audit_logs`
-- Logs every AI decision for debugging
+| Table | Purpose |
+|-------|---------|
+| `leads` | Customer info, status, profile |
+| `messages` | Conversation history |
+| `appointments` | Booked demos (status: `confirmed`) |
+| `business_settings` | Business hours, slot duration |
+| `audit_logs` | AI decision logging |
 
 ---
 
@@ -71,83 +61,68 @@ WhatsApp → Webhook → Inngest Queue → AI Agent → Tool Execution → Whats
 
 | File | Purpose |
 |------|---------|
-| `app/api/webhook/whatsapp/route.ts` | WhatsApp webhook entry point |
+| `app/api/webhook/whatsapp/route.ts` | WhatsApp entry point |
 | `inngest/functions.ts` | Async message processing |
-| `lib/ai/agents.ts` | AI response generation |
-| `lib/ai/prompts.ts` | System prompts (simple, direct) |
+| `lib/ai/agents.ts` | Single unified AI agent |
+| `lib/ai/prompts.ts` | Simple, direct prompts (5 rules max) |
 | `lib/ai/executor.ts` | Tool execution (booking, profile) |
-| `lib/booking.ts` | Slot availability & booking logic |
+| `lib/booking.ts` | Slot availability & booking |
 | `lib/settings.ts` | Business hours from database |
-| `lib/utils/date-utils.ts` | Spanish date parsing ("mañana" → "2025-12-20") |
+| `lib/utils/date-utils.ts` | Spanish date parsing |
 
 ---
 
-## 6. AI System
+## 6. AI Tools
 
-### Prompts
-The AI uses **simple, direct prompts** (see `lib/ai/prompts.ts`):
-- Max 2 sentences per response
-- No repeating what user said
-- When user mentions a time → call booking tools
+| Tool | Purpose |
+|------|---------|
+| `updateLeadProfile` | Save user info (name, company) |
+| `checkAvailability` | Check slots for a date |
+| `bookSlot` | Book an appointment (status: `confirmed`) |
 
-### Tools
-The AI can call these tools (defined in `lib/ai/tools.ts`):
-- `updateLeadProfile` - Save user info (name, company, pain points)
-- `checkAvailability` - Check slots for a date
-- `bookSlot` - Book an appointment
-
-### Date Parsing
-Spanish dates are automatically converted:
+Spanish dates are auto-converted:
 - "mañana" → tomorrow's date
-- "miércoles" → next Wednesday
-- "7am" → "07:00"
+- "lunes" → next Monday
+- "10am" → "10:00"
 
 ---
 
 ## 7. Admin Dashboard
 
-- `/admin/dashboard` - Live lead feed, stats
-- `/admin/calendar` - Appointment management
-- `/admin/analytics` - Conversion metrics
-- `/admin/settings` - Business hours config
+| Route | Purpose |
+|-------|---------|
+| `/admin/dashboard` | Live lead feed, stats |
+| `/admin/calendar` | Appointment management |
+| `/admin/analytics` | Conversion metrics |
+| `/admin/settings` | Business hours config |
 
-Protected by Supabase auth + role check (`app_metadata.role === 'admin'`).
+Protected by Supabase auth + `app_metadata.role === 'admin'`.
 
 ---
 
 ## 8. Testing
 
-### E2E Test
 ```bash
-npx tsx scripts/e2e-booking-test.ts
-```
+# Initialize business settings (run once)
+npx tsx scripts/init-business-settings.ts
 
-AI-to-AI conversation that verifies the full booking flow.
+# Run booking test (1 persona)
+npx tsx scripts/test-booking.ts
 
-### Check Results
-```bash
+# Check database results
 npx tsx scripts/check-test-data.ts
 ```
-
-Shows lead status, audit logs, and appointments.
-
-### Initialize Settings
-```bash
-npx tsx scripts/init-business-settings.ts
-```
-
-Populates `business_settings` table with default hours.
 
 ---
 
 ## 9. Deployment
 
-Automatic via Vercel:
+Auto-deploys on git push:
 ```bash
 git push origin main
 ```
 
-Environment variables needed:
+### Environment Variables
 - `DEEPSEEK_API_KEY`
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY`
@@ -159,33 +134,30 @@ Environment variables needed:
 
 ---
 
-## 10. What Was Removed (December 19, 2025)
+## 10. Critical Fixes Applied (Dec 19, 2025)
 
-Deleted 8,433 lines of broken code:
-- ❌ Complex "Doctor/Closer" multi-agent architecture
-- ❌ Overcomplicated testing framework with 10 personas
-- ❌ Auto-summarization that never worked
-- ❌ RAG with pgvector (not needed for MVP)
+### Fix 1: Appointment Cancellation
+- **Problem**: Appointments created as `unconfirmed`, Sheriff cron cancelled them
+- **Fix**: Changed `lib/booking.ts` to create with `status: 'confirmed'`
 
-**Philosophy**: Simple code that works > Complex code that doesn't.
+### Fix 2: AI Simplification
+- **Problem**: Complex multi-agent system with 17+ rules caused loops
+- **Fix**: Single unified agent with 5 simple rules
 
----
-
-## 11. Verification Results
-
-**Date**: December 19, 2025
-
-| Test | Result |
-|------|--------|
-| Webhook receives messages | ✅ |
-| AI generates responses | ✅ |
-| `checkAvailability` called | ✅ (returned 4 slots) |
-| `bookSlot` called | ✅ (appointment created) |
-| Lead status → `booked` | ✅ |
-| Appointment in database | ✅ |
-
-**Proof**: See `scripts/check-test-data.ts` output.
+### Fix 3: Date Parsing
+- **Problem**: AI passed "mañana" to booking, caused failures
+- **Fix**: `lib/utils/date-utils.ts` converts Spanish to YYYY-MM-DD
 
 ---
 
-*Last Updated: December 19, 2025*
+## 11. Verified E2E Test Result
+
+```
+✅ ÉXITO: CITA AGENDADA Y CONFIRMADA
+📅 Fecha: 2025-12-22T15:00:00+00:00 (Monday Dec 22, 10:00 AM)
+📌 Estado: confirmed
+```
+
+---
+
+*Last Updated: December 19, 2025 @ 12:35 PM Colombia*
