@@ -145,7 +145,7 @@ export async function bookSlot(
             lead_id: leadId,
             start_time: startDateTime,
             end_time: endDateTime,
-            status: 'unconfirmed',
+            status: 'confirmed',
             notes,
         })
         .select()
