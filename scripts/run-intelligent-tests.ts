@@ -33,6 +33,20 @@ async function cleanupTestData() {
         const testPhoneNumbers = getAllScenarios().map(s => s.phoneNumber);
 
         // Delete test leads and cascade delete everything
+        // First, get lead IDs for these phone numbers to clean up audit_logs
+        const { data: leads } = await supabaseAdmin
+            .from('leads')
+            .select('id')
+            .in('phone_number', testPhoneNumbers);
+
+        if (leads && leads.length > 0) {
+            const leadIds = leads.map(l => l.id);
+            await supabaseAdmin
+                .from('audit_logs')
+                .delete()
+                .in('lead_id', leadIds);
+        }
+
         const { error } = await supabaseAdmin
             .from('leads')
             .delete()

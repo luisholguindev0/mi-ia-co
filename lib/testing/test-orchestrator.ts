@@ -65,14 +65,19 @@ export async function runPersonaConversation(
         await sleep(8000);
 
         // Step 2: Intelligent conversation loop
-        for (let turn = 0; turn < maxTurns; turn++) {
-            // Get AI's response from database with retry
-            const aiResponse = await getLatestAIResponseWithRetry(persona.phoneNumber, 3);
+        let lastAiMessageId: string | null = null;
 
-            if (!aiResponse) {
-                console.log(`   ⚠️ No AI response after turn ${turn + 1}`);
+        for (let turn = 0; turn < maxTurns; turn++) {
+            // Get AI's response from database with retry, excluding the last one we saw
+            const aiResponseResult = await getLatestAIResponseWithRetry(persona.phoneNumber, lastAiMessageId, 3);
+
+            if (!aiResponseResult) {
+                console.log(`   ⚠️ No NEW AI response after turn ${turn + 1}`);
                 break;
             }
+
+            const { content: aiResponse, id: aiMessageId } = aiResponseResult;
+            lastAiMessageId = aiMessageId;
 
             console.log(`   AI: ${aiResponse.substring(0, 120)}${aiResponse.length > 120 ? '...' : ''}`);
             conversationLog.push({ role: 'assistant', content: aiResponse });
@@ -159,18 +164,19 @@ export async function runPersonaConversation(
  */
 async function getLatestAIResponseWithRetry(
     phoneNumber: string,
-    maxRetries: number = 3
-): Promise<string | null> {
+    excludeId: string | null,
+    maxRetries: number = 6
+): Promise<{ content: string; id: string } | null> {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        const response = await getLatestAIResponse(phoneNumber);
+        const response = await getLatestAIResponse(phoneNumber, excludeId);
 
         if (response) {
             return response;
         }
 
         if (attempt < maxRetries) {
-            console.log(`   ⏳ Retry ${attempt}/${maxRetries} - waiting 3s for AI response...`);
-            await sleep(3000);
+            console.log(`   ⏳ Retry ${attempt}/${maxRetries} - waiting 5s for NEW AI response...`);
+            await sleep(5000);
         }
     }
 
@@ -180,7 +186,10 @@ async function getLatestAIResponseWithRetry(
 /**
  * Get the latest AI response from the database
  */
-async function getLatestAIResponse(phoneNumber: string): Promise<string | null> {
+async function getLatestAIResponse(
+    phoneNumber: string,
+    excludeId: string | null = null
+): Promise<{ content: string; id: string } | null> {
     try {
         const { data: lead, error: leadError } = await supabaseAdmin
             .from('leads')
@@ -192,11 +201,17 @@ async function getLatestAIResponse(phoneNumber: string): Promise<string | null> 
             return null;
         }
 
-        const { data: messages, error: msgError } = await supabaseAdmin
+        let query = supabaseAdmin
             .from('messages')
-            .select('content')
+            .select('id, content')
             .eq('lead_id', lead.id)
-            .eq('role', 'assistant')
+            .eq('role', 'assistant');
+
+        if (excludeId) {
+            query = query.neq('id', excludeId);
+        }
+
+        const { data: messages, error: msgError } = await query
             .order('created_at', { ascending: false })
             .limit(1);
 
@@ -204,7 +219,10 @@ async function getLatestAIResponse(phoneNumber: string): Promise<string | null> 
             return null;
         }
 
-        return (messages[0] as { content: string }).content;
+        return {
+            content: (messages[0] as { content: string }).content,
+            id: (messages[0] as { id: string }).id
+        };
     } catch (error) {
         console.error(`   Exception in getLatestAIResponse:`, error);
         return null;

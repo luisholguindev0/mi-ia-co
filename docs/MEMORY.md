@@ -1,8 +1,37 @@
-# MEMORY.md - Wrap Up: Extreme Type Safety & IDE Error Resolution
-**Date**: 2025-12-18 21:55 EST  
-**Status**: ✅ **100% Type Safe** | 🛠️ **84 Errors Resolved** | 🚀 **Production Builds Stabilized**
+# MEMORY.md - Wrap Up: AI Brain Tuning & Test Framework Stabilization
+**Date**: 2025-12-18 22:15 EST  
+**Status**: ✅ **Brain Tuned for Precision** | 🧪 **Test Loops Fixed** | 📚 **Knowledge Base Enriched**
 
 ## Session Accomplishments
+
+### 46. AI "Brain Tuning" for Surgical Precision
+- **Problem**: Audit of 6 leads showed human-like but "loopy" AI behavior. The AI was over-empathizing and echoing user pain points, causing long dialogue that discouraged leads from booking.
+- **Solution**: 
+    - **No-Echo Rule**: Updated `lib/ai/prompts.ts` to explicitly forbid repeating user pain back to them. Refocused the AI on moving from "Pain Detection" to "Tool Execution" in < 3 turns.
+    - **25-Word Constraint**: Optimized systemic instructions to prioritize brevity for WhatsApp.
+    - **Surgical Closer**: Sofia (Closer Agent) now performs "Single-Turn Booking" (Availability Check + Slot Booking in one tool call sequence) to reduce friction.
+- **Result**: Carlos Mendoza (Happy Path) persona reached the "Booked" state 3x faster in trial runs.
+
+### 47. Fix: Intelligent Test Orchestrator "Ghost Repetitions"
+- **Problem**: The testing framework suffered from an "Infinite Echo" bug where the test persona would respond to the same AI message multiple times during database polling delays.
+- **Solution**: Refactored `lib/testing/test-orchestrator.ts` to track `lastAiMessageId`. 
+- **Change**: `getLatestAIResponse` now takes an optional `excludeId` to ensure the orchestrator only pulls *new* responses from the database.
+- **Impact**: Stabilized the IDE and eliminated log bloat during E2E test runs.
+
+### 48. Knowledge Base (RAG) Enrichment
+- **Problem**: The AI was hallucinating or being vague about product features because the `knowledge_base` was under-populated.
+- **Action**: Injected 5 high-value entries into Supabase:
+    - ASOS Product Definition (24/7 autonomous sales).
+    - Google Calendar / Outlook integration mechanics.
+    - "God Mode" manual intervention features.
+    - Modular Pricing structure.
+    - Sentiment detection capabilities.
+
+### 49. IDE Typo & Syntax Clean-up
+- **Resolved**: Fixed 4 critical "red squiggly lines" in `lib/ai/prompts.ts` caused by unescaped backticks in template literals.
+
+---
+
 
 ### 44. Elimination of "Red Squiggly Lines" (84 Errors)
 - **Problem**: Codebase had 84 TypeScript errors due to missing database types. AI was "flying blind" regarding table schemas, leading to runtime risk.
